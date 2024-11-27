@@ -1,0 +1,78 @@
+#! /bin/sh
+# PCP QA Test No. 662
+# Exercises REST API functionality using python requests module
+#
+# Copyright (c) 2013-2015,2019 Red Hat.
+#
+seq=`basename $0`
+echo "QA output created by $seq"
+
+. ./common.python
+
+_check_series
+_check_requests_json
+
+$sudo rm -f $tmp.* $seq.full
+signal=$PCP_BINADM_DIR/pmsignal
+status=1	# failure is the default!
+hostname=`hostname`
+machineid=`_machine_id`
+domainname=`_domain_name`
+need_restore=true
+
+# only stop pmproxy if it was not running before the QA test starts
+if [ -n "`_get_pids_by_name pmproxy`" ]
+then
+    pmproxy_was_running=true
+else
+    pmproxy_was_running=false
+fi
+echo "pmproxy_was_running=$pmproxy_was_running" >>$here/$seq.full
+
+_cleanup()
+{
+    cd $here
+    if $need_restore
+    then
+	need_restore=false
+	$sudo rm -rf $PCP_ETC_DIR/pcp/labels/*
+	_restore_config $PCP_ETC_DIR/pcp/labels
+	_sighup_pmcd
+    fi
+    _restore_auto_restart pmproxy
+    $pmproxy_was_running && _service pmproxy restart >$seq.full 2>&1
+    $sudo rm -f $tmp.*
+}
+
+trap "_cleanup; exit \$status" 0 1 2 3 15
+
+_filter_labels()
+{
+    sed \
+	-e "s/domainname=.${domainname}./domainname=\"DOMAIN\"/g" \
+	-e "s/machineid=.${machineid}./machineid=\"MACHINE\"/g" \
+	-e "s/hostname=.${hostname}./hostname=\"HOSTNAME\"/g" \
+    #end
+}
+
+# real test starts here
+_save_config $PCP_ETC_DIR/pcp/labels
+$sudo rm -rf $PCP_ETC_DIR/pcp/labels/*
+_sighup_pmcd
+
+# make the same derived metrics available between the processes
+# being compared (pminfo is run within test_webapi.py, which is
+# affected by this (qa/common unsets this).
+#
+export PCP_DERIVED_CONFIG="$PCP_VAR_DIR/config/derived"
+
+_service pmproxy restart >/dev/null 2>&1
+
+$python $here/src/test_webapi.py | _webapi_response_filter | _filter_labels
+
+echo >>$here/$seq.full
+echo "=== pmproxy log ===" >>$here/$seq.full
+cat $PCP_LOG_DIR/pmproxy/pmproxy.log >>$here/$seq.full
+
+status=0
+exit

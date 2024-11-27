@@ -1,0 +1,29 @@
+#!/bin/sh
+
+if [ $# -ne 2 ]
+then
+    echo "Usage: mkarch-all hostname archive"
+    exit 1
+fi
+
+rm -f $2.0 $2.meta $2.index $2.log
+
+cat <<End-of-File >all.config
+log mandatory on once hinv
+log mandatory on once hw
+
+End-of-File
+pminfo -h $1 \
+| awk -F. '{print $1}' \
+| sort \
+| uniq \
+| while read name
+do
+    echo "log mandatory on default $name" >>all.config
+done
+
+pmlogger -c all.config -l $2.log -t 3 -T 10s -h $1 $2
+xz $2.0
+xz $2.meta
+
+echo "Archive $2 created, log in $2.log"

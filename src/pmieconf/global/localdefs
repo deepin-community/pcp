@@ -1,0 +1,2 @@
+ALL_RULES = parameters pcp_actions
+LOCAL_RULES = $(ALL_RULES)

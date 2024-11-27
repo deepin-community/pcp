@@ -1,0 +1,366 @@
+#!/bin/sh
+# PCP QA Test No. 1290
+# Basic pmproxy functionality
+#
+# valgrind version of qa/294
+#
+# Copyright (c) 2005 Silicon Graphics, Inc.  All Rights Reserved.
+# Copyright (c) 2021 Ken McDonell.  All Rights Reserved.
+#
+
+seq=`basename $0`
+echo "QA output created by $seq"
+
+# get standard environment, filters and checks
+. ./common.product
+. ./common.filter
+. ./common.check
+
+_check_valgrind
+which pmdumptext >/dev/null 2>&1 || _notrun "No installed pmdumptext binary"
+
+#debug# tmp=`pwd`/tmp
+signal=$PCP_BINADM_DIR/pmsignal
+status=1	# failure is the default!
+username=`id -u -n`
+$sudo rm -rf $tmp.* $seq.full
+trap "_cleanup; $sudo rm -rf $tmp.*; exit \$status" 0 1 2 3 15
+
+pmproxy_was_running=false
+[ -f $PCP_RUN_DIR/pmproxy.pid ] && pmproxy_was_running=true
+echo "pmproxy_was_running=$pmproxy_was_running" >>$here/$seq.full
+[ -f $PCP_RUN_DIR/pmproxy.pid ] && echo "pmproxy.pid: `cat $PCP_RUN_DIR/pmproxy.pid`" >>$here/$seq.full
+
+_cleanup()
+{
+    if [ ! -f $tmp.started ]
+    then
+	# valgrind never got our pmproxy started ...
+	#
+	for suff in out err
+	do
+	    echo "=== valgrind $suff ===" >>$here/$seq.full
+	    cat $tmp._valgrind.$suff >>$here/$seq.full
+	done
+    fi
+    echo "=== valgrind report ===" >>$here/$seq.full
+    cat $tmp._valgrind >>$here/$seq.full
+    if $pmproxy_was_running
+    then
+	echo "Restart pmproxy ..." >>$here/$seq.full
+	_service pmproxy restart >>$here/$seq.full 2>&1
+	_wait_for_pmproxy
+    else
+	echo "Stopping pmproxy ..." >>$here/$seq.full
+	_service pmproxy stop >>$here/$seq.full 2>&1
+    fi
+}
+
+# in addition to the ususal filtering tasks ..
+# on slow VMs (like bozo-vm) we may need to dodge warnings
+# from pmie's rule scheduler around pmcd reconnection ... the awk
+# script at the end iof the pipeline does this.
+#
+_filter()
+{
+    sed \
+	-e '/hinv/s/ [0-9][0-9]*$/ N/' \
+	-e '/^[A-Z][a-z][a-z] [A-Z][a-z][a-z]  *[0-9][0-9]* [0-9][0-9]:[0-9][0-9]:[0-9][0-9]/{
+# pmdumptext
+s//DATE/
+s/	[0-9][0-9.]*/	N/g
+}' \
+	-e '/^\[[A-Z][a-z][a-z] [A-Z][a-z][a-z]  *[0-9][0-9]* [0-9][0-9]:[0-9][0-9]:[0-9][0-9]]/{
+# pmie trailer
+s//[DATE]/
+s/([0-9][0-9]*)/(PID)/
+}' \
+	-e '/expr_1/s/  *[0-9][0-9.]*/ N/g' \
+	-e '/^@ [A-Z][a-z][a-z] [A-Z][a-z][a-z]  *[0-9][0-9]* [0-9][0-9]:[0-9][0-9]:[0-9][0-9] [0-9][[0-9][0-9][0-9]/{
+# pmstat header1
+s//@ DATE/
+}' \
+	-e '/^   1 min   swpd   free   buff  cache   pi   po   bi   bo   in   cs  us  sy  id/{
+# pmstat header3
+s//   1 min   swpd   free   buff  cache   si   so   bi   bo   in   cs  us  sy  id/
+}' \
+	-e '/[0-9?][0-9.Kmg]*  *[0-9?][0-9.Kmg]*  *[0-9?][0-9.Kmg]*  *[0-9?][0-9.Kmg]*  *[0-9?][0-9.Kmg]*/{
+# pmstat data
+s/  *?/ ?/g
+s/  *[0-9][0-9.Kmg]*/ N/g
+}' \
+    | _filter_me \
+    | $PCP_AWK_PROG '
+skip == 1 && /^[^ ]/		{ skip = 0 }
+/^run: schedule eval/		{ skip = 1 }
+/^sleepTight: negative/		{ skip = 1 }
+/^Last sleepTight until:/	{ skip = 1 }
+/^This sleepTight\() entry:/	{ skip = 1 }
+/^Harvest children done:/	{ skip = 1 }
+/^Want sleepTight until:/	{ skip = 1 }
+/Task dump @/			{ skip = 1 }
+skip == 0			{ print }'
+
+}
+
+_filter_me()
+{
+    sed \
+	-e "s/`hostname`/MY_HOSTNAME/g" \
+	-e "s/`hostname | sed -e 's/\..*//'`/MY_HOSTNAME/" \
+	-e "s/local:/MY_HOSTNAME/" \
+	-e "s/localhost\.localdomain/MY_HOSTNAME/" \
+	-e "s/localhost/MY_HOSTNAME/" \
+	-e "s#$PCP_VAR_DIR#PCP_VAR_DIR#g" \
+	-e "s#$PCP_BINADM_DIR#PCP_BINADM_DIR#g" \
+	-e "s#$PCP_SYSCONF_DIR/pmlogger/config.pmstat#TMP.logger.config#g" \
+	-e "s,$tmp.config,TMP.logger.config,g" \
+	-e "s/$username/USERNAME/g" \
+	-e "s#$tmp#TMP#g"
+}
+
+_filter_report()
+{
+   _filter_valgrind | \
+   sed -e '/^ERROR/d' \
+   | _filter_me
+}
+
+_filter_pmproxy()
+{
+    sed \
+	-e '/^__pmSetSocketIPC: fd=/d' \
+	-e '/^__pmSetDataIPC:/d' \
+	-e '/^__pmDataIPC: /d' \
+	-e '/^IPC table fd/d' \
+	-e '/^pmproxy: disabled time series, requires libuv support (missing)/d' \
+    # end
+}
+
+# see comments below, ahead of where this is used ...
+#
+_filter_pmstat()
+{
+    tee -a $here/$seq.full \
+    | $PCP_AWK_PROG '
+BEGIN	{ skip = 0; h1 = h2 = h3 = 0 }
+skip == 1	{
+	    if ($0 ~ /End of PCP archive/)
+		skip = 0
+	    else
+		next
+	}
+NF == 0	{ print; next }
+$2 == "DATE"	{
+	    # heading line 1 only once
+	    if (h1)
+		next
+	    h1 = 1
+	}
+$1 == "loadavg"	{
+	    # heading line 2 only once
+	    if (h2)
+		next
+	    h2 = 1
+	}
+$3 == "swpd"	{
+	    # heading line 3 only once
+	    if (h3)
+		next
+	    h3 = 1
+	}
+	{ n = q = 0
+	  for (i = 1; i <= NF; i++) {
+	    if ($i == "?") q++
+	    if ($i == "N") n++
+	  }
+	  if (q > NF / 2) {
+	    # more than half no data, skip this one
+	    next
+	  }
+	  if (n == NF) {
+	    if (skip == 0) {
+		# only report first line of N N ... N
+		skip = 1
+	    }
+	  }
+	  print
+	}'
+}
+
+_do()
+{
+    echo
+    echo "+++ $* +++" | tee -a $seq.full | _filter_me
+    if which $1 >/dev/null 2>&1
+    then
+	eval $* 2>&1 | tee -a $seq.full | _filter
+	connects=`grep AcceptNewClient $tmp.log | wc -l | sed -e 's/  *//g'`
+	disconnects=`grep DeleteClient $tmp.log | wc -l | sed -e 's/  *//g'`
+	difference=$(($connects - $disconnects))
+	echo "N connects"
+	echo "N-$difference disconnects"
+    else
+	echo "Skipped, no $1 binary installed"
+    fi
+}
+
+_do_config()
+{
+    cat >$tmp.config <<End-of-File
+log advisory on default {
+    kernel.all.load
+    swap.used
+    mem.util.free
+    mem.util.bufmem
+    mem.bufmem
+    mem.util.cached
+    swap.in
+    swap.pagesin
+    swap.out
+    swap.pagesout
+    disk.all.blkread
+    disk.all.blkwrite
+    kernel.all.intr
+    kernel.all.intr.non_vme
+    kernel.all.pswitch
+    kernel.all.cpu
+}
+End-of-File
+}
+
+$PCP_PS_PROG $PCP_PS_ALL_FLAGS | grep -E '[P]PID|/[p]mproxy( |$)' >>$here/$seq.full
+_service pmproxy stop >/dev/null 2>&1
+$sudo $signal -s KILL -a pmproxy >/dev/null 2>&1
+$PCP_PS_PROG $PCP_PS_ALL_FLAGS | grep -E '[P]PID|/[p]mproxy( |$)' >>$here/$seq.full
+
+mkdir -p $tmp.rundir
+export PCP_RUN_DIR=$tmp.rundir
+proxyargs="-Dcontext -U $username"
+
+__extra=''
+# copied from _run_valgrind (which we cannot use here) ...
+#
+# extract version number I.J.K ... ignore anything after that,
+# e.g. .SVN or .SVN-Debian for Debian-based distros
+#
+__version=`valgrind --version | sed -e 's/valgrind-//' -e 's/\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\).*/\1/'`
+valgrind --help >$tmp.valgrind.help 2>&1
+grep -q .--vgdb= <$tmp.valgrind.help && __extra="$__extra --vgdb=no"
+grep -q .--show-error-list= <$tmp.valgrind.help && __extra="$__extra --show-error-list=yes"
+if grep -q .--show-leak-kinds= <$tmp.valgrind.help
+then
+    __extra="$__extra --show-leak-kinds=definite"
+else
+    if grep -q .--show-possibly-lost= <$tmp.valgrind.help
+    then
+        __extra="$__extra --show-reachable=no --show-possibly-lost=no"
+    else
+        __extra="$__extra --show-reachable=no"
+    fi
+fi
+if [ -f $here/valgrind-suppress-$__version ]
+then
+    __extra="$__extra --suppressions=$here/valgrind-suppress-$__version"
+    echo "Warning: using extra $__extra" >>$here/$seq.full
+else
+    echo "Warning: no extra suppressions found for valgrind version $__version" >>$here/$seq.full
+fi
+valgrind \
+    --trace-children=yes \
+    --leak-check=full --read-var-info=yes --gen-suppressions=all \
+    --show-leak-kinds=all \
+    --suppressions=$here/valgrind-suppress $__extra \
+    --log-file=$tmp._valgrind \
+	$PCP_BINADM_DIR/pmproxy $proxyargs -l $tmp.log \
+	    2>$tmp._valgrind.err >$tmp._valgrind.out &
+
+# assume default port ...
+#
+rm -f $tmp.started
+_wait_for_pmproxy 44322 $tmp.log
+touch $tmp.started
+
+export PMPROXY_HOST=localhost
+$PCP_BINADM_DIR/pmcd_wait -t 5sec -h localhost@localhost
+$PCP_PS_PROG $PCP_PS_ALL_FLAGS | grep -E '[P]PID|/[p]mproxy( |$)' >>$here/$seq.full
+cat $tmp.log >> $here/$seq.full
+
+# on a slow VM, valgrind can be painful, so a little more patience may
+# be required
+#
+export PMCD_REQUEST_TIMEOUT=20
+
+# real QA test starts here
+_do pminfo -h $PMPROXY_HOST -d pmcd.agent
+_do pminfo -h $PMPROXY_HOST -f sample.hordes
+_do pmprobe -v -h localhost hinv.ncpu
+_do pmval -h `hostname` -t 0.5 -s 3 sample.bin
+
+echo "kernel.all.load;" >$tmp.in
+_do pmie -h $PMPROXY_HOST -c $tmp.in -v -t 0.5 -T 1.75 
+echo "kernel.all.cpu.user :localhost;" >$tmp.in
+_do pmie -h $PMPROXY_HOST -c $tmp.in -v -t 0.5 -T 1.75 
+_do pmdumptext -h `hostname` -t 0.5 -s 2 sample.string.hullo
+_do pmdumptext -t 0.5 -s 2 localhost:sample.string.hullo
+_do pmdumptext -t 0.5 -s 2 `hostname`:kernel.all.load
+
+# Note: there used to be special casing for Darwin/Solaris platforms
+# here.  This is wrong, pmstat must still run on these platforms and
+# produce no values for some columns.
+
+_do pmstat -h $PMPROXY_HOST -t 0.5 -s 2
+_do_config 
+# and compared to the non-valgrind version, we have to run pmlogger
+# for more samples to make sure we get at least some good data
+#
+_do pmlogger -h localhost -c $tmp.config -t 0.5sec -s 8 -l $tmp.logger.log $tmp.arch
+# and compared to the non-valgrind version, we need to cull out
+# the no data available rows and deal with non-determinism in
+# the number of reported data available samples, and only
+# output the pmstat headings once
+#
+_do pmstat -t 0.5sec -a $tmp.arch -z 2>&1 \
+| _filter_pmstat
+
+# for debugging this test ...
+#
+pmdumplog -Lm -z $tmp.arch >>$here/$seq.full 2>&1
+#pmstat -Dfetch,interp -S +0.4sec -t 0.5sec -a $tmp.arch -z >>$here/$seq.full 2>&1
+
+( echo ""; echo "=== pmproxy.log ===" ) >>$seq.full
+cat $tmp.log >>$seq.full
+
+# stop pmproxy and harvest output ...
+#
+$sudo $signal -s KILL -a pmproxy >>$here/$seq.full 2>&1
+sleep 2
+# valgrind goes by different names ... valgrind, valgrind.bin, ...
+# kill 'em all!
+#
+$PCP_PS_PROG $PCP_PS_ALL_FLAGS \
+| sed -n -e '/\/[v]algrind.*\/pmproxy/{
+s/^[^ ][^ ]* *//
+s/ .*//
+p
+}' \
+| while read pid
+do
+    echo "Killing PID $pid ..." >>$here/$seq.full
+    $sudo $signal -s KILL $pid >>$here/$seq.full 2>&1
+done
+wait
+
+# also copied from _run_valgrind (which we cannot use here) ...
+#
+echo
+echo "=== pmproxy std out ==="
+cat $tmp._valgrind.out
+echo "=== pmproxy std err ==="
+cat $tmp._valgrind.err
+echo "=== filtered valgrind report ==="
+cat $tmp._valgrind | _filter_report
+
+# success, all done
+status=0
+exit

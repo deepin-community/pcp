@@ -1,0 +1,5 @@
+*.[0-9]
+*.index
+*.meta
+*.log
+*.log.prev

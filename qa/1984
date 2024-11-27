@@ -1,0 +1,91 @@
+#!/bin/sh
+# PCP QA Test No. 1984
+# Ensure pmlogconf enables/disables sections after agent Install/Remove.
+# Use the same options as the pmlogger auto-configuration service.
+#
+# Copyright (c) 2022 Red Hat.
+#
+
+seq=`basename $0`
+echo "QA output created by $seq"
+
+# get standard environment, filters and checks
+. ./common.product
+. ./common.filter
+. ./common.check
+
+[ -d $PCP_PMDAS_DIR/redis ] || _notrun "Redis PMDA is not installed"
+which redis-server >/dev/null 2>&1 || _notrun "No redis-server binary found"
+redis_port=6379
+$PCP_BINADM_DIR/telnet-probe -c localhost $redis_port \
+        || _notrun "Noone home on default Redis port $redis_port"
+
+_cleanup()
+{
+    if [ $reinstall -eq 1 ]; then
+	cd $PCP_PMDAS_DIR/redis
+	$sudo ./Install >/dev/null 2>&1
+	reinstall=0
+    fi
+    cd $here
+    $sudo rm -rf $tmp $tmp.*
+}
+
+status=0	# success is the default!
+reinstall=0
+$sudo rm -rf $tmp $tmp.* $seq.full
+trap "_cleanup; exit \$status" 0 1 2 3 15
+
+_filter()
+{
+    sed \
+	-e "s,$tmp.path,TMPPATH,g" \
+	-e "s,$tmp.conf,TMPCONFIG,g" \
+	-e "s/^\*\*\* TMPCONFIG.*/*** DIFF INPUT FILE/g" \
+	-e "s/^--- TMPCONFIG.*/--- DIFF OUTPUT FILE/g" \
+    # end
+}
+
+# real QA test starts here
+mkdir -p $tmp.path
+cat > $tmp.path/redis << EOF
+#pmlogconf-setup 2.0
+ident   metrics used by the redis-server(1) service
+probe	redis.process_id values ? include : exclude
+	redis
+EOF
+
+# cull any pre-existing redis metrics
+cd $PCP_PMDAS_DIR/redis
+pmprobe -v redis | grep -q 'Unknown metric name' 2>&1
+if [ $? -ne 0 ]; then
+    $sudo ./Remove >/dev/null 2>&1
+    reinstall=1
+fi
+
+echo; echo == create initial config
+pmlogconf -c -q -d $tmp.path $tmp.conf </dev/null | _filter 2>&1
+
+echo; echo == update config with redis metrics | tee -a $here/$seq.full
+$sudo ./Install >>$here/$seq.full 2>&1
+numval=`pmprobe -v redis.process_id | tee -a $here/$seq.full | $PCP_AWK_PROG '{ print $2 }'`
+if [ -z "$numval" -o "$numval" -lt 0 ]; then
+    echo "Botch: redis PMDA install failed"
+    pminfo -f redis.process_id
+    status=1
+    exit
+fi
+pmlogconf -r -c -q -d $tmp.path $tmp.conf </dev/null | _filter 2>&1
+
+echo; echo == verify no subsequent change
+pmlogconf -r -c -q -d $tmp.path $tmp.conf </dev/null | _filter 2>&1
+
+echo; echo == update config without redis metrics | tee -a $here/$seq.full
+$sudo ./Remove >>$here/$seq.full 2>&1
+pmlogconf -r -c -q -d $tmp.path $tmp.conf </dev/null | _filter 2>&1
+
+echo; echo == verify no subsequent change
+pmlogconf -r -c -q -d $tmp.path $tmp.conf </dev/null | _filter 2>&1
+
+# success, all done
+exit

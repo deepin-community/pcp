@@ -1,0 +1,13 @@
+/*
+ * fake "root" for validating the local PMNS subtree
+ */
+
+#include <stdpmid>
+
+#ifndef ZFS
+#define ZFS 153
+#endif
+
+root { zfs }
+
+#include "pmns"

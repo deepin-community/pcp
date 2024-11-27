@@ -1,0 +1,84 @@
+#!/bin/sh
+#
+# Add unlimited pmlc access from the local network to the default
+# pmlogger.
+#
+# TODO IPv6?
+#
+#
+home=`echo $0 | sed -e 's/\/*allow-pmlc-access$//'`
+if [ ! -f $home/whatami ]
+then
+    echo >&2 "Botch: \$0=$0 -> bad \$home=$home ?"
+    exit 1
+fi
+
+if [ ! -f $home/packages.rc ]
+then
+    echo >&2 "Botch: cannot find $home/packages.rc"
+    exit
+fi
+
+. $home/packages.rc
+
+tmp=/var/tmp/$$
+sts=0
+very_verbose=false
+trap "rm -f $tmp.*; exit \$sts" 0 1 2 3 15
+
+# add additional and optional directories
+for dir in /sbin /usr/sbin
+do
+    if [ -d "$dir" ]
+    then
+	if echo ":$PATH:" | grep -q ":$dir:"
+	then
+	    :
+	else
+	    export PATH="$PATH:$dir"
+	    #debug# echo add $dir to \$PATH
+	fi
+    fi
+done
+
+network=`_getnetworkaddr`
+
+if [ -z "$network" ]
+then
+    echo "Arrgh ... cannot discover local network IP address"
+    sts=1
+    exit
+fi
+
+if [ -f /etc/pcp.conf ]
+then
+    . /etc/pcp.conf
+
+    # TODO ... check in pmlogger for config file name ... other than
+    # assuming config.default
+    if [ -f $PCP_VAR_DIR/config/pmlogger/config.default ]
+    then
+	if [ -s $PCP_VAR_DIR/config/pmlogger/config.default ]
+	then
+	    if grep -q "^allow $network" $PCP_VAR_DIR/config/pmlogger/config.default
+	    then
+		echo "Already done."
+	    else
+		cp $PCP_VAR_DIR/config/pmlogger/config.default $tmp.conf
+		# TODO check for [access] at the end already?
+		echo "allow $network : all;" >>$tmp.conf
+		diff -u $PCP_VAR_DIR/config/pmlogger/config.default $tmp.conf
+		sudo cp $tmp.conf $PCP_VAR_DIR/config/pmlogger/config.default
+		echo "Now you need to restart the primary pmlogger."
+	    fi
+	else
+	    echo "Warning: \"$PCP_VAR_DIR/config/pcp/pmlogger/config.default\" is empty"
+	    echo "         Need to start primary pmlogger once and try again."
+	fi
+    else
+	echo "Warning: \"$PCP_VAR_DIR/config/pcp/pmlogger/config.default\" is missing"
+	echo "         Need to start primary pmlogger once and try again."
+    fi
+else
+    echo "Warning: \"/etc/pcp.conf\" is missing"
+fi

@@ -1,0 +1,110 @@
+#!/bin/sh
+# PCP QA Test No. 1214
+# https://github.com/performancecopilot/pcp/issues/859
+#
+# Copyright (c) 2020 Red Hat.  All Rights Reserved.
+#
+
+seq=`basename $0`
+echo "QA output created by $seq"
+
+# get standard environment, filters and checks
+. ./common.product
+. ./common.filter
+. ./common.check
+. ./common.keys
+
+_check_valgrind
+_check_series
+_check_key_server_version_offline
+
+_cleanup()
+{
+    echo
+    cd $here
+    echo == Shutdown local key server and pmproxy ...
+    [ -n "$proxypid" ] && kill -TERM "$proxypid"
+    [ -n "$options" ] && $keys_cli $options shutdown
+    echo finished
+    $sudo rm -rf $tmp $tmp.*
+}
+
+status=0
+hostname=`hostname`
+$sudo rm -rf $tmp $tmp.* $seq.full
+trap "_cleanup; exit \$status" 0 1 2 3 15
+
+# real QA test starts here
+echo "=== Start test key server ..."
+key_server_port=`_find_free_port`
+options="-p $key_server_port"
+$key_server --port $key_server_port --save "" > $tmp.keys 2>&1 &
+_check_key_server_ping $key_server_port
+echo
+echo "=== Start test pmproxy ..."
+proxyport=`_find_free_port`
+username=`id -u -n`
+cat > $tmp.conf <<EOF
+[pmproxy]
+pcp.enabled = true
+http.enabled = true
+resp.enabled = true
+[pmseries]
+enabled = true
+servers = localhost:$key_server_port
+EOF
+$PCP_BINADM_DIR/pmproxy -f -p $proxyport -s $tmp.socket \
+	-U $username -l $tmp.log -c $tmp.conf &
+proxypid=$!
+pmsleep 0.5
+echo === initial pmproxy log === >> $seq.full
+cat $tmp.log >> $seq.full
+
+echo "== load test data for verification" | tee -a $here/$seq.full
+pmseries $options --load $here/archives/proc > $here/$seq.full
+echo === test data load complete === >> $seq.full
+
+metrics="kernel.all.load disk.dev.read"
+for metric in $metrics
+do
+    echo === Verifying $metric series >> $seq.full
+
+    echo
+    echo == pmseries query for $metric to key server directly
+    pmseries -p $key_server_port $metric | tee -a $here/$seq.full > $tmp.out
+    key_server_nseries=`wc -l < $tmp.out`
+    if [ -z "$key_server_nseries" -o "$key_server_nseries" -le 0 ]
+    then
+	echo pmseries -p $key_server_port $metric failed
+	status=1
+    fi
+
+    echo
+    echo == pmseries query for $metric to key server via pmproxy
+    pmseries -p $proxyport $metric | tee -a $here/$seq.full > $tmp.out
+    proxy_nseries=`wc -l < $tmp.out`
+    if [ -z "$proxy_nseries" -o "$proxy_nseries" -le 0 ]
+    then
+	echo pmseries -p $proxyport $metric failed
+	echo proxy_nseries=$proxy_nseries
+	status=2
+    fi
+
+    if [ "$key_server_nseries" -ne "$proxy_nseries" ]
+    then
+	echo keyserver=$key_server_nseries differs to pmproxy=$proxy_nseries
+	status=3
+    fi
+
+    echo === pmproxy log === >> $seq.full
+    cat $tmp.log >> $seq.full
+    if [ $status -ne 0 ]
+    then
+	[ $status -eq 1 ] && $_valgrind_clean_assert \
+		pmseries -p $key_server_port $metric >> $seq.full 2>&1
+	[ $status -ge 2 ] && $_valgrind_clean_assert \
+		pmseries -p $proxyport $metric >> $seq.full 2>&1
+    fi
+done
+
+exit

@@ -1,0 +1,19 @@
+QA output created by 712
+
+checking client, generic certificate.  should pass...
+
+hinv.ncpu
+    value NUMBER
+
+checking client, no certificate verify.  should pass...
+
+hinv.ncpu
+    value NUMBER
+
+checking client, verify certificate setup.  should pass...
+
+hinv.ncpu
+    value NUMBER
+
+checking client, server certificate only.  should fail...
+Error: hinv.ncpu: IPC protocol failure

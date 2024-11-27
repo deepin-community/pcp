@@ -1,0 +1,115 @@
+#!/bin/sh
+# PCP QA Test No. 1740
+# Exercise Linux acct(5) process accounting metrics.
+#
+# Copyright (c) 2020 Red Hat.  All Rights Reserved.
+#
+
+seq=`basename $0`
+if [ $# -eq 0 ]
+then
+    echo "QA output created by $seq"
+else
+    echo "QA output created by $seq $*"
+fi
+
+# get standard environment, filters and checks
+. ./common.product
+. ./common.filter
+. ./common.check
+
+[ $PCP_PLATFORM = linux ] || _notrun "Linux-specific pmdaproc testing"
+
+_cleanup()
+{
+    cd $here
+    $sudo rm -rf $tmp $tmp.*
+}
+
+status=1	# failure is the default!
+$sudo rm -rf $tmp $tmp.* $seq.full
+trap "_cleanup; exit \$status" 0 1 2 3 15
+
+# This test produces different output if process accounting is enabled
+# when the test is run
+#
+rm -f $seq.out
+if which lastcomm >/dev/null 2>&1
+then
+    lastcomm 2>/dev/null >$tmp.1
+    if [ -s $tmp.1 ]
+    then
+	# some output from lastcomm ... does it change?
+	#
+	lastcomm 2>/dev/null >$tmp.2
+	if diff $tmp.1 $tmp.2 >>$seq.full
+	then
+	    echo "Accounting is OFF" >>$seq.full
+	    ln $seq.off.out $seq.out
+	else
+	    echo "Accounting is ON" >>$seq.full
+	    ln $seq.on.out $seq.out
+	fi
+    else
+	echo "Accounting is OFF (nothing from lastcomm)" >>$seq.full
+	ln $seq.off.out $seq.out
+    fi
+else
+    # no lastcomm => no user space process account tools
+    #
+    echo "Accounting tools are NOT installed" >>$seq.full
+    ln $seq.off.out $seq.out
+fi
+
+_filter()
+{
+    # capture all in .full but just output first inst and value
+    tee -a $here/$seq.full | \
+    sed \
+	-e 's/inst \[[0-9][0-9]*/inst [N/g' \
+	-e 's/or \".*\"]/or INSTNAME]/g' \
+	-e 's/value .*/value VALUE/g' \
+    | head -3
+}
+
+_header()
+{
+    echo
+    echo === $* ===
+    echo
+}
+
+# real QA test starts here
+psinfo=`pminfo acct.psinfo | LC_COLLATE=POSIX sort`
+flag=`pminfo acct.flag | LC_COLLATE=POSIX sort`
+id=`pminfo acct.id | LC_COLLATE=POSIX sort`
+
+_pminfo()
+{
+    $sudo pminfo -f acct.control.state acct.control.enable_acct
+    for metric in $psinfo $flag $id
+    do
+	$sudo pminfo -f $metric | _filter
+    done
+}
+
+# ensure accounting is initially off
+$sudo pmstore acct.control.enable_acct 0 >>$seq.full
+
+_header "initially disabled"
+_pminfo
+
+_header "enable accounting as non-root"
+pmstore acct.control.enable_acct 1
+_header "enable accounting as root"
+$sudo pmstore acct.control.enable_acct 1
+date >/dev/null
+_pminfo
+
+_header "disable accounting"
+$sudo pmstore acct.control.enable_acct 0
+_pminfo
+
+# success, all done
+status=0
+exit

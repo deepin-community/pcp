@@ -1,0 +1,14 @@
+#!/bin/sh
+# PCP QA Test No. 917
+#
+# Copyright (c) 2017-2018 Red Hat Inc.  All Rights Reserved.
+#
+
+seq=`basename $0`
+echo "QA output created by $seq"
+
+. ./common.product
+. ./common.check
+
+_notrun "Retired - transitioned to independent PCP selinux policy"
+exit 0

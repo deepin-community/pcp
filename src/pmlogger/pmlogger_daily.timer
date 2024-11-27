@@ -1,0 +1,10 @@
+[Unit]
+Description=Daily processing of archives
+
+[Timer]
+Persistent=true
+OnCalendar=*-*-* 00:10:00
+
+[Install]
+WantedBy=timers.target
+RequiredBy=pmlogger.service
