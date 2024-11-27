@@ -1,0 +1,20 @@
+QA output created by 966
+
+checking client, secure connection.  should pass...
+
+hinv.ncpu
+    value NUMBER
+
+checking client, bad secure config.  should fail...
+[DATE] pminfo(PID) Error: Cannot load certificate chain from /dev/null
+pminfo: Cannot connect to PMCD on host LOCALHOST: Not Connected
+
+checking client, insecure connection.  should pass...
+
+hinv.ncpu
+    value NUMBER
+
+checking client, connecting via 'local:'.  should pass...
+
+hinv.ncpu
+    value NUMBER

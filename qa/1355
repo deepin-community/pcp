@@ -1,0 +1,101 @@
+#!/bin/sh
+# PCP QA Test No. 1355
+# Exercise pmproxy key server reconnect.
+#
+# Copyright (c) 2021 Red Hat.  All Rights Reserved.
+#
+
+seq=`basename $0`
+echo "QA output created by $seq"
+
+# get standard environment, filters and checks
+. ./common.product
+. ./common.filter
+. ./common.check
+. ./common.keys
+
+_check_key_server_version_offline
+
+_cleanup()
+{
+    cd $here
+    [ -n "$tail_pid" ] && $signal -s TERM $tail_pid
+    [ -n "$pmproxy_pid" ] && $signal -s TERM $pmproxy_pid
+    [ -n "$keysproxy_pid" ] && $signal -s TERM $keysproxy_pid
+    [ -n "$keys_pid" ] && $signal -s TERM $keys_pid
+    $sudo rm -rf $tmp $tmp.*
+}
+
+status=0	# success is the default!
+signal=$PCP_BINADM_DIR/pmsignal
+
+username=`id -u -n`
+
+$sudo rm -rf $tmp $tmp.* $seq.full
+trap "_cleanup; exit \$status" 0 1 2 3 15
+
+_filter_pmproxy_log()
+{
+    sed -e 's/, command keys//g' | \
+    sed -e 's/^.*Info: Key /key /g' | \
+    sed -e 's/LOADING .* is loading/loading/g' | \
+    grep -oE "Lost connection.+|Trying to connect to .+|Cannot connect to .+|.+ setup"
+}
+
+# real QA test starts here
+echo "Start key server"
+key_server_port=`_find_free_port`
+$key_server --port $key_server_port --save "" > $tmp.keys.log 2>&1 &
+key_server_pid=$!
+_wait_for_port $key_server_port
+
+echo "Start key server proxy to fake loading error for first 3 seconds"
+keysproxyport=`_find_free_port`
+$python src/key_server_proxy.py --loading_delay 3 127.0.0.1:$keysproxyport 127.0.0.1:$key_server_port > $tmp.keysproxy.log &
+keysproxy_pid=$!
+_wait_for_port $keysproxyport
+
+echo "Start pmproxy"
+pmproxyport=`_find_free_port`
+pmproxy -f -U $username -x $tmp.err -l $tmp.pmproxy.log -p $pmproxyport -r $keysproxyport -t &
+pmproxy_pid=$!
+_wait_for_port $pmproxyport
+
+echo
+echo "== Observe a loading error and reconnect"
+curl -m 1 -o /dev/null -s "http://localhost:$pmproxyport/series/query?expr=hinv.ncpu"
+sleep 5
+lineno=1
+tail -n +$lineno $tmp.pmproxy.log | _filter_pmproxy_log
+lineno=$((`wc -l < $tmp.pmproxy.log` + 1))
+
+echo
+echo "Stop key server proxy"
+$signal -s TERM $keysproxy_pid
+
+echo
+echo "== Observe a connection lost error and failed reconnect"
+curl -m 1 -o /dev/null -s "http://localhost:$pmproxyport/series/query?expr=hinv.ncpu"
+sleep 5
+tail -n +$lineno $tmp.pmproxy.log | _filter_pmproxy_log
+lineno=$((`wc -l < $tmp.pmproxy.log` + 1))
+
+echo
+echo "Start key server proxy again (loading error for first 3 seconds)"
+$python src/key_server_proxy.py --loading_delay 3 127.0.0.1:$keysproxyport 127.0.0.1:$key_server_port > $tmp.keysproxy.log &
+keysproxy_pid=$!
+_wait_for_port $keysproxyport
+
+echo
+echo "== Observe a reconnect"
+curl -m 1 -o /dev/null -s "http://localhost:$pmproxyport/series/query?expr=hinv.ncpu"
+sleep 5
+tail -n +$lineno $tmp.pmproxy.log | _filter_pmproxy_log
+lineno=$((`wc -l < $tmp.pmproxy.log` + 1))
+
+
+# store all logs in $seq.full
+tail -n +1 $tmp.*.log > $seq.full
+
+# success, all done
+exit

@@ -1,0 +1,26 @@
+QA output created by 748
+old -> new changes
+@@ -345,7 +345,7 @@
+     Semantics: instant  Units: none
+ PMID: 66.0.110 (mysql.status.connections)
+     Data Type: 32-bit unsigned int  InDom: PM_INDOM_NULL 0xffffffff
+-    Semantics: instant  Units: none
++    Semantics: counter  Units: count
+ PMID: 66.0.111 (mysql.status.created_tmp_disk_tables)
+     Data Type: 32-bit unsigned int  InDom: PM_INDOM_NULL 0xffffffff
+     Semantics: counter  Units: count
+@@ -768,10 +768,10 @@
+     Semantics: instant  Units: none
+ PMID: 66.0.251 (mysql.status.uptime)
+     Data Type: 32-bit unsigned int  InDom: PM_INDOM_NULL 0xffffffff
+-    Semantics: counter  Units: sec
++    Semantics: instant  Units: sec
+ PMID: 66.0.252 (mysql.status.uptime_since_flush_status)
+     Data Type: 32-bit unsigned int  InDom: PM_INDOM_NULL 0xffffffff
+-    Semantics: counter  Units: sec
++    Semantics: instant  Units: sec
+ PMID: 66.0.253 (mysql.status.slave_running_num)
+     Data Type: 32-bit unsigned int  InDom: PM_INDOM_NULL 0xffffffff
+     Semantics: instant  Units: none
+
+new -> ref changes ... expect none

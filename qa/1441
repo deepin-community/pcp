@@ -1,0 +1,358 @@
+#!/bin/sh
+# PCP QA Test No. 1441
+# primary pmlogger successfully follows hostname changes
+# and
+# primary pmie successfully follows hostname changes
+#
+# Copyright (c) 2023 Ken McDonell.  All Rights Reserved.
+#
+# :not_in_ci:
+#	we're not sure that changing the VM/container hostname to
+#	"boofa-1441" is going to lead to happiness.
+
+if [ $# -eq 0 ]
+then
+    seq=`basename $0`
+    echo "QA output created by $seq"
+else
+    # use $seq from caller, unless not set
+    [ -n "$seq" ] || seq=`basename $0`
+    echo "QA output created by `basename $0` $*"
+fi
+
+# get standard environment, filters and checks
+. ./common.product
+. ./common.filter
+. ./common.check
+
+$sudo rm -rf $tmp $tmp.* $seq.full /tmp/pmie-hb
+
+oldhostname=`hostname`
+newhostname="boofa-$seq"
+
+if grep "^$oldhostname\$" qa_hosts >/dev/null
+then
+    _notrun "$oldhostname is too precious to change hostname"
+    # NOTREACHED
+fi
+
+# need systemd's autorestart to get pmlogger restarted quickly
+# ... cron-based restart takes too long for a QA test
+#
+[ "$PCPQA_SYSTEMD" = yes ] || _notrun "systemctl not installed or not active"
+
+_cleanup()
+{
+    # bit tricky ... if hostname here is boofa-1441, sudo(1)
+    # may babble about "unable to resolve host ...."
+    #
+    cd $here
+    if [ -n "$config" ]
+    then
+	$sudo rm -f $config 2>>$seq.full
+	_restore_config $config 2>>$seq.full
+    fi
+    if [ "`hostname`" != "$oldhostname" ]
+    then
+	$sudo hostname "$oldhostname" 2>>$seq.full
+	_wait_for_new_pmlogger "$newlogger"
+	_wait_for_new_pmie "$newpmie"
+    fi
+    for dir in boofa-$seq
+    do
+	$sudo rm -rf "$PCP_LOG_DIR/pmlogger/$dir"
+	$sudo rm -rf "$PCP_LOG_DIR/pmie/$dir"
+    done
+    $sudo rm -rf $tmp $tmp.*
+    [ -f /tmp/pmie-hb ] && ( echo "Final heartbeat ..."; cat /tmp/pmie-hb ) >>$seq.full
+}
+
+# wait until the primary pmlogger's pid is != $1
+#
+# In the default/zeroconf setup, PMLOGGER_INTERVAL=10 and there are
+# lots of metrics logged at the default ... pmlogger only sees
+# PMCD_HOSTNAME_CHANGE from the pmFetch(), so it could be up to 10
+# seconds before the old pmlogger notices it has to exit, then
+# systemd needs time to notice and restart pmlogger
+#
+_wait_for_new_pmlogger()
+{
+    echo "_wait_for_new_pmlogger previous PID $1 ..." >>$seq.full
+    $PCP_PS_PROG $PCP_PS_ALL_FLAGS | grep -E '[P]PID|/[p]mlogger( |$)' >>$seq.full
+    max_delay=15
+    i=0
+    while [ $i -lt $max_delay ]
+    do
+	pid=`cat $PCP_RUN_DIR/pmlogger.pid 2>/dev/null`
+	[ -n "$pid" -a "$pid" != "$1" ] && break
+	sleep 1
+	i=`expr $i + 1`
+    done
+    if [ -n "$pid" -a "$pid" != "$1" ]
+    then
+	echo "found PID $pid (after ${i}s) ..." >>$seq.full
+	$PCP_PS_PROG $PCP_PS_ALL_FLAGS | grep -E '[P]PID|/[p]mlogger( |$)' >>$seq.full
+    else
+	echo "Failed!" >>$seq.full
+	echo "Arrgh: failed to see new pmlogger after $max_delay seconds"
+	date
+	ls -l $PCP_RUN_DIR/pmlogger.pid
+	ls -l $PCP_TMP_DIR/pmlogger
+	$PCP_PS_PROG $PCP_PS_ALL_FLAGS | grep -E '[P]PID|/[p]mlogger( |$)'
+	status=1
+    fi
+}
+
+# wait until the primary pmie's pid is != $1
+#
+# In pmie's config.default, the most frequent rule evaluation is once
+# every 2 mins (sigh) ... pmie only sees PMCD_HOSTNAME_CHANGE from the
+# pmFetch(), so it could be up to 120 seconds before the old pmie notices
+# it has to exit, then systemd needs time to notice and restart pmie, but
+# in addition, pmie's scheduler is sometimes a bit slow so add another
+# 10 secs for all of that
+#
+_wait_for_new_pmie()
+{
+    echo "_wait_for_new_pmie previous PID $1" >>$seq.full
+    $PCP_PS_PROG $PCP_PS_ALL_FLAGS | grep -E '[P]PID|/[p]mie( |$)' >>$seq.full
+    max_delay=130
+    i=0
+    while [ $i -lt $max_delay ]
+    do
+	pid=`cat $PCP_RUN_DIR/pmie.pid 2>/dev/null`
+	[ -n "$pid" -a "$pid" != "$1" ] && break
+	sleep 1
+	i=`expr $i + 1`
+    done
+    if [ -n "$pid" -a "$pid" != "$1" ]
+    then
+	echo "found PID $pid (after ${i}s) ..." >>$seq.full
+	$PCP_PS_PROG $PCP_PS_ALL_FLAGS | grep -E '[P]PID|/[p]mie( |$)' >>$seq.full
+    else
+	echo "Failed!" >>$seq.full
+	echo "Arrgh: failed to see new pmie after $max_delay seconds"
+	date
+	ls -l $PCP_RUN_DIR/pmie.pid
+	ls -l $PCP_TMP_DIR/pmie
+	$PCP_PS_PROG $PCP_PS_ALL_FLAGS | grep -E '[P]PID|/[p]mie( |$)'
+	$sudo -u pcp kill -USR1 "$1"
+	sleep 1
+	echo "=== $oldhostname log ===" >>$seq.full
+	cat $PCP_LOG_DIR/pmie/$oldhostname/pmie.log >>$seq.full
+	echo "=== $newhostname log ===" >>$seq.full
+	cat $PCP_LOG_DIR/pmie/$newhostname/pmie.log >>$seq.full
+	status=1
+    fi
+}
+
+# need primary pmlogger running
+#
+if [ -f $PCP_RUN_DIR/pmlogger.pid ]
+then
+    oldlogger=`cat $PCP_RUN_DIR/pmlogger.pid`
+    echo "old pmlogger pid: $oldlogger" >>$seq.full
+else
+    _notrun "$PCP_RUN_DIR/pmlogger.pid not found for old primary pmlogger"
+    # NOTREACHED
+fi
+
+# need a new primary pmie running with our special config.default
+# that has a small delta so we pmFetch() often enough to see the
+# hostname change from pmcd
+#
+pminfo -f pmcd.pmie.configfile >$tmp.pminfo
+if grep "0 or \"primary\"" <$tmp.pminfo >/dev/null
+then
+    :
+else
+    cat $tmp.pminfo >>$seq.full
+    _notrun "primary pmie not running"
+    # NOTREACHED
+fi
+config=`sed -n <$tmp.pminfo -e '/0 or "primary"/{
+s/"$//
+s/.*"//
+p
+}'`
+if [ -z "$config" ]
+then
+    cat $tmp.pminfo >>$seq.full
+    _notrun "cannot find pmie's config"
+fi
+echo "config=$config" >>$seq.full
+_save_config $config
+
+# need to "up" the pace for pmie so that rule firing is more
+# frequent than the default config permits, this enables pmie
+# to see the hostname changes with acceptable (to QA) delays
+#
+echo "// Installed by PCP QA test $seq on `date`" >$tmp.config
+cat <<'End-of-File' >>$tmp.config
+//
+// 2-sec heartbeat
+delta = 2 sec;
+qa.heartbeat = hinv.ncpu > 0
+-> shell "[ -f /tmp/pmie-hb ] || echo 0 >/tmp/pmie-hb; exit 0" &
+   shell "echo \$(expr `cat /tmp/pmie-hb` + 1) >/tmp/pmie-hb";
+End-of-File
+$sudo cp $tmp.config $config
+_service pmie restart >>$seq.full 2>&1
+_wait_for_pmie
+
+if [ -f $PCP_RUN_DIR/pmie.pid ]
+then
+    oldpmie=`cat $PCP_RUN_DIR/pmie.pid`
+    echo "old pmie pid: $oldpmie" >>$seq.full
+    if [ -z "$oldpmie" ]
+    then
+	echo "Botch: $PCP_RUN_DIR/pmie.pid empty?"
+	ls -l $PCP_RUN_DIR/pmie.pid
+	od $PCP_RUN_DIR/pmie.pid
+	$PCP_PS_PROG $PCP_PS_ALL_FLAGS | grep -E '[P]PID|/[p]mie( |$)'
+	cat $PCP_VAR_LOG/pmie/`hostname`/pmie.log
+	_cleanup
+	exit 1
+    fi
+else
+    echo "Botch: $PCP_RUN_DIR/pmie.pid not found for (restarted) old primary pmie"
+    $PCP_PS_PROG $PCP_PS_ALL_FLAGS | grep -E '[P]PID|/[p]mie( |$)'
+    cat $PCP_VAR_LOG/pmie/`hostname`/pmie.log
+    _cleanup
+    exit 1
+fi
+
+# need mmap control file for new pmie as well ... wait up to 2 secs
+#
+try=0
+while [ $try -lt 20 ]
+do
+    [ -f $PCP_TMP_DIR/pmie/$oldpmie ] && break
+    pmsleep 0.1
+    try=`expr $try + 1`
+done
+if [ ! -f $PCP_TMP_DIR/pmie/$oldpmie ]
+then
+    echo "Botch: $PCP_TMP_DIR/pmies/$oldpmie not found for (restarted) old primary pmie"
+    _cleanup
+    exit 1
+fi
+
+newlogger=0
+newpmie=0
+
+status=0	# success is the default!
+trap "_cleanup; exit \$status" 0 1 2 3 15
+
+# to make sudo(1) happy, we really need DNS to work for boofa-$seq,
+# so force entry in /etc/hosts
+#
+if grep "[ 	]boofa-$seq$" /etc/hosts >/dev/null 2>&1
+then
+    :
+else
+    sed </etc/hosts >$tmp.tmp -e '/^127\.0\.0\.1.*[ 	]localhost/{
+a\
+# added by Performance Co-Pilot Quality Assurance test '$seq'\
+127.0.0.7	boofa-'$seq'
+}'
+    sudo cp $tmp.tmp /etc/hosts
+    echo "Added boofa-$seq entry in /etc/hosts" >>$seq.full
+fi
+
+_filter()
+{
+    sed \
+	-e "s@$tmp@TMP@g" \
+	-e "s@$PCP_ARCHIVE_DIR@PCP_ARCHIVE_DIR@" \
+	-e "s@$PCP_LOG_DIR@PCP_LOG_DIR@" \
+	-e "s@$PCP_VAR_DIR@PCP_VAR_DIR@" \
+	-e "s/$oldhostname/OLDHOSTNAME/g" \
+	-e "s/$newhostname/NEWHOSTNAME/g" \
+	-e "s@/[0-9][0-9.-]*@/DATESTAMP@" \
+    # end
+}
+
+# real QA test starts here
+echo "old pmlogger ..."
+if [ ! -f $PCP_TMP_DIR/pmlogger/primary ]
+then
+    echo "Arrgh: no tracking file in $PCP_TMP_DIR for primary pmlogger"
+    date
+    ls -l $PCP_TMP_DIR/pmlogger
+    status=1
+    exit
+fi
+_filter <$PCP_TMP_DIR/pmlogger/primary \
+| sed \
+    -e 's/^reexec$/pmlogger_check|reexec/' \
+    -e 's/^pmlogger_check$/pmlogger_check|reexec/' \
+    # end
+
+echo
+echo "old pmie ..."
+if [ ! -f $PCP_TMP_DIR/pmie/$oldpmie ]
+then
+    echo "Arrgh: no tracking file in $PCP_TMP_DIR for old primary pmie"
+    date
+    ls -l $PCP_TMP_DIR/pmie
+    status=1
+    exit
+fi
+$PCP_BINADM_DIR/pmiestatus $PCP_TMP_DIR/pmie/$oldpmie \
+| _filter
+
+echo
+echo "Change hostname ..."
+$sudo hostname "$newhostname" 2>>$seq.full
+_wait_for_new_pmlogger "$oldlogger"
+
+echo
+echo "new pmlogger ..."
+if [ ! -f $PCP_TMP_DIR/pmlogger/primary ]
+then
+    echo "Arrgh: no tracking file in $PCP_TMP_DIR for primary pmlogger"
+    date
+    ls -l $PCP_TMP_DIR/pmlogger
+    status=1
+    exit
+fi
+_filter <$PCP_TMP_DIR/pmlogger/primary
+
+if [ -f $PCP_RUN_DIR/pmlogger.pid ]
+then
+    newlogger=`cat $PCP_RUN_DIR/pmlogger.pid`
+    echo "current pmlogger PID $newlogger" >>$seq.full
+else
+    echo "$PCP_RUN_DIR/pmlogger.pid not found for new primary pmlogger"
+    status=1
+    exit
+fi
+
+echo
+echo "new pmie ..."
+_wait_for_new_pmie "$oldpmie"
+
+if [ -f $PCP_RUN_DIR/pmie.pid ]
+then
+    newpmie=`cat $PCP_RUN_DIR/pmie.pid`
+    echo "current pmie PID $newpmie" >>$seq.full
+else
+    echo "$PCP_RUN_DIR/pmie.pid not found for new primary pmie"
+    status=1
+    exit
+fi
+
+if [ ! -f $PCP_TMP_DIR/pmie/$newpmie ]
+then
+    echo "Arrgh: no tracking file in $PCP_TMP_DIR for new primary pmie"
+    date
+    ls -l $PCP_TMP_DIR/pmie
+    status=1
+    exit
+fi
+$PCP_BINADM_DIR/pmiestatus $PCP_TMP_DIR/pmie/$newpmie \
+| _filter
+
+# success, all done
+exit

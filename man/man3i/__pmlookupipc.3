@@ -1,0 +1,73 @@
+'\"macro stdmacro
+.\"
+.\" Copyright (c) 2000 Silicon Graphics, Inc.  All Rights Reserved.
+.\"
+.\" This program is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License as published by the
+.\" Free Software Foundation; either version 2 of the License, or (at your
+.\" option) any later version.
+.\"
+.\" This program is distributed in the hope that it will be useful, but
+.\" WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+.\" or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+.\" for more details.
+.\"
+.\"
+.TH PMLOOKUPIPC 3 "PCP" "Performance Co-Pilot"
+.SH NAME
+\f3__pmOverrideLastFd\f1,
+\f3__pmPrintIPC\f1,
+\f3__pmResetIPC\f1 \- IPC version infrastructure support
+.SH "C SYNOPSIS"
+.ft 3
+#include "pmapi.h"
+.br
+#include "libpcp.h"
+.sp
+void __pmOverrideLastFd(int \fIfd\fP);
+.br
+void __pmPrintIPC(void);
+.br
+void __pmResetIPC(int \fIfd\fP);
+.sp
+cc ... \-lpcp
+.ft 1
+.SH CAVEAT
+This documentation is intended for internal Performance Co-Pilot
+(PCP) developer use.
+.PP
+These interfaces are not part of the PCP APIs that are guaranteed to
+remain fixed across releases, and they may not work, or may provide
+different semantics at some point in the future.
+.SH DESCRIPTION
+IPC channels throughout the distributed PCP framework are affected by the
+PCP 2.0 (and later) PDU changes.  These functions are the interface to the libpcp IPC
+connection management global data.  This data consists of a hash table of
+__pmIPC structures (indexed by file descriptor) and a cached, most-recently-used
+file descriptor.
+.PP
+The
+.B __pmOverrideLastFd
+is an escape mechanism for use in those situations where the last PDU
+fetch did not go through the usual channels (i.e. __pmGetPDU), so as to ensure
+that the cached file descriptor is the correct file descriptor for the PDU
+which is currently being processed.  This will typically be used for archive
+PDU processing or where version information is not available for a given file
+descriptor (e.g. immediately prior to a PDU version exchange).
+.PP
+.B __pmPrintIPC
+is a useful debugging routine for displaying a table mapping all currently
+registered file descriptors to their associated PDU version numbers.  Unused
+entries in this table should display the value zero in the version column.
+.PP
+.B __pmResetIPC
+resets the version information associated with the given file descriptor to some
+known (invalid) number.  Subsequent lookups on this file descriptor will return
+an UNKNOWN_VERSION embedded within the __pmIPC structure.
+.SH DIAGNOSTICS
+A negative return value from \f3__pmOverrideLastFd\f1 indicates that the
+file descriptor argument is not registered in the hash table.
+This typically indicates closure of an IPC channel, so PM_ERR_IPC is returned
+if this is the case.
+.SH SEE ALSO
+.BR PMAPI (3)

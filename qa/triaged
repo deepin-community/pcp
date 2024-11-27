@@ -1,0 +1,147 @@
+# Tests that might fail, but where further investigation is not warranted,
+# e.g. known bug, fix is difficult and pending, or sometimes timing issues
+# on particular platforms.
+#
+# Fields are
+# - <seqno>
+# - <whatami-RE>
+# - <comments>
+#
+# If test <seqno> fails, but there is an entry in this file for that
+# <seqno> and the <whatami-RE> field (a grep(1) regular expression)
+# matches the output from admin/whatami, then the test is considered
+# "Triaged" not "Failed".
+#
+# The fields here are <tab> separated to allow a space in the
+# second field in particular.
+#
+# Any line that does not begin with a <seqno> followed by a <tab> is
+# treated as a comment.  So lines that begin with a # are comments, as
+# are lines that begin with white space (the latter is useful to wrap long
+# <comments> fields over multiple lines).
+#
+# Because the <whatami-RE> field is used with egrep, one needs to
+# (backslash) escape both [ and ( when a literal match is needed ... (none
+# of the other special grep -E RE characters appear in the whatami output).
+#
+# Typical whatami output looks like:
+# bozo                6.0.0    x86_64  Ubuntu 20.04 (focal) [kernel=5.4.0 py=3.8.10 se=none]
+# <hostname>          <PCP version>
+#                              <hardware>
+#                                      <operating system>
+#                                                           <key software versions>
+#
+
+098	vm37	fails in QA run, but later passes with check-flakey
+102	vm37	fails in QA run, but later passes with check-flakey
+135	bozo-vm	sometimes this VM (VMware on Windows) goes to sleep and
+		the pmlogger fetches are long-delayed causing the test
+		to fail miserably
+280	.*	there is a potential collision with the regular running
+		of pmlogger_check and this test finds the lock file in
+		place and goes down a rabbit hole ... it is just too hard
+		to engineer our way around this
+749	CentOS Stream9	systemtap-devel is busted here, staprun is missing
+749	vm22	test stap -p4 $tmp.stap may hang forever, so we don't
+		even get to the _notrun here
+878	.*	on some QA hosts this fails sometimes when we don't see
+		the first or second event record ... despite extensive
+		triage the problem is not understood
+946	.*	Avahi confusion results in no discovery, disabled by default.
+1080	Ubuntu 2[02]\.	for pcp-atop built -O2 (not -O0) valgrind reports
+			Conditional jump or move depends on uninitialised value
+			at 0x11F1D2: deviattask (deviate.c:340)
+			but this seems bogus and is not seen elsewhere
+1171	openSUSE Leap 15.6	bcc module profile => LLVM ERROR: and no details
+1173	Fedora 38	pmdabcc cannot get the ucalls module to work here
+1179	openSUSE Leap 15.6	bcc module ustat => bpf: Argument list too long
+1210	vm[0-9][0-9]	may collide with pmlogger_check and (correctly)
+			detects presence of /etc/pcp/pmlogger/lock
+1290	Debian 1[01]	valgrind-reported issues in libpcp_web redis i/o functions
+1339	OpenBSD 7\.	there is some race condition between pmcd and the sample
+			PMDA when using inet sockects to communicate ... the
+			test passes sometimes and fails other times and hand
+			testing with dbpmda cannot reproduce a failure
+1475	Fedora 39	pmdabpf cannot get the mountsnoop module to work here
+1490	Fedora 39	mem leak appears to be from the pile of steaming stuff
+			know as Python, not the PCP labelsets code
+1490	Fedora 40	ditto
+1574	.*	valgrind-reported issue in libpcp_web pmseries functions
+1662	.*	valgrind-reported issue in libpcp_web archive discovery
+		handling of sources
+1673	openSUSE Leap 15.[56]	bashreadline.so does not work here for the
+				bpf PMDA
+1701	Fedora 38	Python exception in json/decoder.py
+1702	Fedora 38	bpftrace PMDA is broken here, check-flakey passes
+1704	Fedora 38	bpftrace PMDA is broken here, check-flakey passes
+1705	Fedora 38	bpftrace PMDA is broken here, check-flakey passes
+1707	Fedora 38	bpftrace PMDA is broken here, check-flakey passes
+			(sometimes)
+1709	Fedora 38	statsd PMDA is broken here, check-flakey passes
+1740	vm21		acct(2) just seems broken here
+1724	Fedora 38	bpftrace PMDA is broken here, check-flakey passes
+			(sometimes)
+1973	Ubuntu 16\.04	Python here is 3.5.2 and there a bunch of what look like
+			dict ordering and/or cacheing sequence differences
+			and some arithmetic rounding differences ... not
+			worth wasting more time on
+1988	Ubuntu 16\.04	Python here is 3.5.2 and there a bunch of what look
+			arithmetic rounding differences ... not worth wasting
+			more time on
+1989	Ubuntu 16\.04	Python here is 3.5.2 and the output is not even
+			close to the expected output with different timestamps
+			and order of stats being reported ... not worth
+			wasting more time on
+1990	Ubuntu 16\.04	Python here is 3.5.2 and the output is not even
+			close to the expected output with different timestamps
+			and order of stats being reported ... not worth
+			wasting more time on
+1991	Ubuntu 16\.04	Python here is 3.5.2 and there are a couple of
+			timestamps that are off by one second ... not worth
+			wasting more time on
+# special QA environment probing test
+#
+1526	.*		failure indicates the environment probe is active,
+			not a QA failure
+# tzset botch for Python time module on FreeBSD 14 ... which is really
+# a localtime() botch as per https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=276281
+#
+035	FreeBSD 14.0	https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=276281
+317	FreeBSD 14.0	https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=276281
+922	FreeBSD 14.0	https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=276281
+1038	FreeBSD 14.0	https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=276281
+1070	FreeBSD 14.0	https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=276281
+1071	FreeBSD 14.0	https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=276281
+1072	FreeBSD 14.0	https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=276281
+1132	FreeBSD 14.0	https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=276281
+1134	FreeBSD 14.0	https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=276281
+1135	FreeBSD 14.0	https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=276281
+1136	FreeBSD 14.0	https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=276281
+1139	FreeBSD 14.0	https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=276281
+1140	FreeBSD 14.0	https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=276281
+1169	FreeBSD 14.0	https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=276281
+1183	FreeBSD 14.0	https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=276281
+1185	FreeBSD 14.0	https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=276281
+1202	FreeBSD 14.0	https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=276281
+1240	FreeBSD 14.0	https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=276281
+1242	FreeBSD 14.0	https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=276281
+1489	FreeBSD 14.0	https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=276281
+1500	FreeBSD 14.0	https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=276281
+1546	FreeBSD 14.0	https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=276281
+1547	FreeBSD 14.0	https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=276281
+1549	FreeBSD 14.0	https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=276281
+1623	FreeBSD 14.0	https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=276281
+1671	FreeBSD 14.0	https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=276281
+1793	FreeBSD 14.0	https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=276281
+# and these ones are just localtime() botched, no Python involved
+#
+079	FreeBSD 14.0	https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=276281
+165	FreeBSD 14.0	https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=276281
+176	FreeBSD 14.0	https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=276281
+289	FreeBSD 14.0	https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=276281
+313	FreeBSD 14.0	https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=276281
+486	FreeBSD 14.0	https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=276281
+495	FreeBSD 14.0	https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=276281
+556	FreeBSD 14.0	https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=276281
+585	FreeBSD 14.0	https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=276281
+634	FreeBSD 14.0	https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=276281

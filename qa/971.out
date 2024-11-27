@@ -1,0 +1,20 @@
+QA output created by 971
+old -> new changes
+@@ -14,11 +14,11 @@
+     Data Type: string  InDom: 2.1 0x800001
+     Semantics: discrete  Units: none
+ PMID: 3.8.17 (proc.psinfo.priority)
+-    Data Type: 32-bit unsigned int  InDom: 3.9 0xc00009
+-    Semantics: discrete  Units: none
++    Data Type: 32-bit int  InDom: 3.9 0xc00009
++    Semantics: instant  Units: none
+ PMID: 3.8.18 (proc.psinfo.nice)
+-    Data Type: 32-bit unsigned int  InDom: 3.9 0xc00009
+-    Semantics: discrete  Units: none
++    Data Type: 32-bit int  InDom: 3.9 0xc00009
++    Semantics: instant  Units: none
+ 
+ Instance Domains in the Log ...
+ InDom: 2.1
+
+new -> ref changes ... expect none

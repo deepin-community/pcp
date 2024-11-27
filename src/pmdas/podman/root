@@ -1,0 +1,15 @@
+/*
+ * fake "root" for validating the local PMNS subtree
+ */
+
+#include <stdpmid>
+
+#ifndef PODMAN
+#define PODMAN 33
+#endif
+
+root {
+    podman
+}
+
+#include "pmns"

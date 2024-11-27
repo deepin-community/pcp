@@ -1,0 +1,16 @@
+QA output created by 713
+
+checking client, server certificate only.  should pass...
+
+hinv.ncpu
+    value NUMBER
+
+checking client, user certificate only.  should pass...
+
+hinv.ncpu
+    value NUMBER
+
+checking client, user certificate only, second time.  should pass...
+
+hinv.ncpu
+    value NUMBER

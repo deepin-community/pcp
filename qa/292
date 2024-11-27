@@ -1,0 +1,139 @@
+#! /bin/sh
+# PCP QA Test No. 292
+# duplicate/alias base name resolution by pmlogger_check
+#
+# Copyright (c) 1995-2002 Silicon Graphics, Inc.  All Rights Reserved.
+#
+
+seq=`basename $0`
+echo "QA output created by $seq"
+
+# get standard filters
+. ./common.product
+. ./common.filter
+. ./common.check
+
+_filter()
+{
+    sed \
+	-e '/host:/s/ [^ ].*/ HOST/' \
+	-e '/start:/s/ [^ ].*/ DATE/' \
+	-e '/end:/s/ [^ ].*/ DATE/' \
+	-e 's/^..:..:..\..../TIMESTAMP   /' \
+	-e "s/^TIMESTAMP *$debug$/TIMESTAMP     DEBUG/g"
+}
+
+_cleanup()
+{
+    if [ ! -f $tmp.cleanup ]
+    then
+	_kill_my_pmloggers
+	touch $tmp.cleanup
+    fi
+}
+
+_kill_my_pmloggers()
+{
+    $PCP_PS_PROG $PCP_PS_ALL_FLAGS \
+    | grep '/[p]mlogger .*-c ./config' \
+    | $PCP_AWK_PROG '{ print $2 }' \
+    | while read pid
+    do
+	sudo kill -TERM $pid
+    done
+}
+
+signal="$sudo $PCP_BINADM_DIR/pmsignal"
+status=0	# success is the default!
+trap "_cleanup; cd $here; $sudo rm -rf $tmp $tmp.*; exit \$status" 0 1 2 3 15
+
+debug=`pmprobe -v pmcd.control.debug | $PCP_AWK_PROG '{ print $3 }'`
+
+rm -rf $tmp $seq.full
+mkdir $tmp
+chmod ugo+w $tmp
+cd $tmp
+
+echo >control '# PCP archive logging configuration/control - for qa/'$seq'
+#
+$version=1.1
+LOCALHOSTNAME	n   n	'`pwd`'	-s 1 -c ./config'
+
+echo "log mandatory on once pmcd.control.debug" >config
+
+touch pmcheck.log
+chmod ugo+w pmcheck.log
+
+# real QA test starts here
+_kill_my_pmloggers
+echo "start pmlogger ..."
+$sudo $PCP_BINADM_DIR/pmlogger_check -V -c control >>pmcheck.log 2>&1
+
+for i in 0 1 2 3 4
+do
+    rm -f $tmp.done $tmp.wait_log
+    wait=0
+    while [ $wait -lt 20 ]
+    do
+	check=`$PCP_PS_PROG $PCP_PS_ALL_FLAGS | grep '/[p]mlogger .*-c ./config'`
+	echo "$i:$wait:$check" >>$tmp.wait_log
+	if [ -z "$check" ]
+	then
+	    echo $wait >$tmp.done
+	    break
+	fi
+	pmsleep 0.05
+	wait=`expr $wait + 1`
+    done
+    if [ ! -f $tmp.done ]
+    then
+	cat $tmp.wait_log
+	ls -l
+	[ -f pmcheck.log ] && cat pmcheck.log
+	[ -f pmlogger.log.prev ] && cat pmlogger.log.prev
+	[ -f pmlogger.log ] && cat pmlogger.log
+	echo "Arrgh: failed to see pmlogger exit at iteration $i"
+	status=1
+	exit
+    fi
+    echo "iter $i: pmlogger exited after `cat $tmp.done` pmsleep delays" >>$here/$seq.full
+    [ $i -eq 4 ] && break
+    echo "restart pmlogger ..."
+    _kill_my_pmloggers
+    $sudo $PCP_BINADM_DIR/pmlogger_check -V -c control >>pmcheck.log 2>&1
+done
+_kill_my_pmloggers
+
+echo
+echo "Checking ..."
+for sn in 00 01
+do
+    if [ "`echo *-$sn.index`" != "*-$sn.index" ]
+    then
+	echo "Found at least one \"-$sn\" suffix"
+    else
+	echo "No \"-$sn\" suffix found!"
+	status=1
+    fi
+done
+
+if [ $status = 1 ]
+then
+    echo
+    echo "Hmm ... this is what we got"
+    ls -l
+    echo "=== pmlogger.log==="
+    cat pmlogger.log
+    echo "=== pmcheck.log==="
+    cat pmcheck.log
+fi
+
+echo
+echo "merge 'em together ..."
+ls -l >>$here/$seq.full
+$sudo $PCP_BINADM_DIR/pmlogextract *.meta* out
+pmval -U out pmcd.control.debug \
+| tee -a $here/$seq.full \
+| _filter
+
+exit

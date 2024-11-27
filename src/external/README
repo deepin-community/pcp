@@ -1,0 +1,24 @@
+If possible add externally maintained code below 'vendor'
+at the top level in the PCP git repo.  See 'CONTRIBUTING'
+file for details.
+
+Lightweight HTTP parser
+    - https://github.com/nodejs/http-parser/
+
+sort_r (portable quicksort with closure)
+    - https://github.com/noporpoise/sort_r
+
+hash (portable performant hash function)
+    - https://burtleburtle.net/bob/hash/evahash.html
+
+fnmatch implementation for Windows builds only
+    - freebsd/master/lib/libc/gen/fnmatch.c
+
+crc16, dict, sha1, sha256 (hash and string helpers)
+    - https://github.com/valkey-io/valkey/tree/unstable/src
+
+Callback functions on main libuv thread
+    - https://github.com/litesync/uv_callback
+
+atop (system and process monitor)
+    - https://github.com/Atoptool/atop

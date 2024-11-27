@@ -1,0 +1,778 @@
+QA output created by 938
+pmRegisterDerived: name="event.flags" expr="anon(PM_TYPE_U32)"
+derive_lex() -> type=L_ANON "anon"
+derive_lex() -> type=L_LPAREN "("
+derive_lex() -> type=L_NAME "PM_TYPE_U32"
+derive_lex() -> type=L_RPAREN ")"
+derive_lex() -> type=L_EOS ""
+pmRegisterDerived: global metric[0] event.flags = anon(PM_TYPE_U32)
+Derived metric expr dump from <addr>...
+expr node <addr> type=ANON left=<addr> right=(nil) save_last=0
+expr node <addr> type=INTEGER left=(nil) right=(nil) save_last=0 [PM_TYPE_U32] primary=1
+pmRegisterDerived: name="event.missed" expr="anon(PM_TYPE_U32)"
+derive_lex() -> type=L_ANON "anon"
+derive_lex() -> type=L_LPAREN "("
+derive_lex() -> type=L_NAME "PM_TYPE_U32"
+derive_lex() -> type=L_RPAREN ")"
+derive_lex() -> type=L_EOS ""
+pmRegisterDerived: global metric[1] event.missed = anon(PM_TYPE_U32)
+Derived metric expr dump from <addr>...
+expr node <addr> type=ANON left=<addr> right=(nil) save_last=0
+expr node <addr> type=INTEGER left=(nil) right=(nil) save_last=0 [PM_TYPE_U32] primary=1
+Derived metric initialization from $PCP_DERIVED_CONFIG
+pmLoadDerivedConfig("TMP.config")
+pmRegisterDerived: name="a.m1" expr="sample.long.one == 1 ? sample.ulonglong.ten : sample.ulonglong.hundred"
+derive_lex() -> type=L_NAME "sample.long.one"
+derive_lex() -> type=L_EQ "=="
+derive_lex() -> type=L_INTEGER "1"
+derive_lex() -> type=L_QUEST "?"
+derive_lex() -> type=L_NAME "sample.ulonglong.ten"
+derive_lex() -> type=L_COLON ":"
+derive_lex() -> type=L_NAME "sample.ulonglong.hundred"
+derive_lex() -> type=L_EOS ""
+pmRegisterDerived: global metric[2] a.m1 = sample.long.one == 1 ? sample.ulonglong.ten : sample.ulonglong.hundred
+Derived metric expr dump from <addr>...
+expr node <addr> type=QUEST left=<addr> right=<addr> save_last=0
+expr node <addr> type=EQ left=<addr> right=<addr> save_last=0
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.long.one] primary=1
+expr node <addr> type=INTEGER left=(nil) right=(nil) save_last=0 [1] primary=1
+expr node <addr> type=COLON left=<addr> right=<addr> save_last=0
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.ulonglong.ten] primary=1
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.ulonglong.hundred] primary=1
+pmRegisterDerived: name="a.m2" expr="sample.long.one != 1 ? sample.ulonglong.ten : sample.ulonglong.hundred"
+derive_lex() -> type=L_NAME "sample.long.one"
+derive_lex() -> type=L_NEQ "!="
+derive_lex() -> type=L_INTEGER "1"
+derive_lex() -> type=L_QUEST "?"
+derive_lex() -> type=L_NAME "sample.ulonglong.ten"
+derive_lex() -> type=L_COLON ":"
+derive_lex() -> type=L_NAME "sample.ulonglong.hundred"
+derive_lex() -> type=L_EOS ""
+pmRegisterDerived: global metric[3] a.m2 = sample.long.one != 1 ? sample.ulonglong.ten : sample.ulonglong.hundred
+Derived metric expr dump from <addr>...
+expr node <addr> type=QUEST left=<addr> right=<addr> save_last=0
+expr node <addr> type=NEQ left=<addr> right=<addr> save_last=0
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.long.one] primary=1
+expr node <addr> type=INTEGER left=(nil) right=(nil) save_last=0 [1] primary=1
+expr node <addr> type=COLON left=<addr> right=<addr> save_last=0
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.ulonglong.ten] primary=1
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.ulonglong.hundred] primary=1
+pmRegisterDerived: name="a.m3" expr="sample.bin > 400 ? sample.bin-sample.bin : sample.bin"
+derive_lex() -> type=L_NAME "sample.bin"
+derive_lex() -> type=L_GT ">"
+derive_lex() -> type=L_INTEGER "400"
+derive_lex() -> type=L_QUEST "?"
+derive_lex() -> type=L_NAME "sample.bin"
+derive_lex() -> type=L_MINUS "-"
+derive_lex() -> type=L_NAME "sample.bin"
+derive_lex() -> type=L_COLON ":"
+derive_lex() -> type=L_NAME "sample.bin"
+derive_lex() -> type=L_EOS ""
+pmRegisterDerived: global metric[4] a.m3 = sample.bin > 400 ? sample.bin-sample.bin : sample.bin
+Derived metric expr dump from <addr>...
+expr node <addr> type=QUEST left=<addr> right=<addr> save_last=0
+expr node <addr> type=GT left=<addr> right=<addr> save_last=0
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.bin] primary=1
+expr node <addr> type=INTEGER left=(nil) right=(nil) save_last=0 [400] primary=1
+expr node <addr> type=COLON left=<addr> right=<addr> save_last=0
+expr node <addr> type=MINUS left=<addr> right=<addr> save_last=0
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.bin] primary=1
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.bin] primary=1
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.bin] primary=1
+pmRegisterDerived: name="a.m4" expr="sample.bin > 400 ? sample.long.ten : sample.bin"
+derive_lex() -> type=L_NAME "sample.bin"
+derive_lex() -> type=L_GT ">"
+derive_lex() -> type=L_INTEGER "400"
+derive_lex() -> type=L_QUEST "?"
+derive_lex() -> type=L_NAME "sample.long.ten"
+derive_lex() -> type=L_COLON ":"
+derive_lex() -> type=L_NAME "sample.bin"
+derive_lex() -> type=L_EOS ""
+pmRegisterDerived: global metric[5] a.m4 = sample.bin > 400 ? sample.long.ten : sample.bin
+Derived metric expr dump from <addr>...
+expr node <addr> type=QUEST left=<addr> right=<addr> save_last=0
+expr node <addr> type=GT left=<addr> right=<addr> save_last=0
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.bin] primary=1
+expr node <addr> type=INTEGER left=(nil) right=(nil) save_last=0 [400] primary=1
+expr node <addr> type=COLON left=<addr> right=<addr> save_last=0
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.long.ten] primary=1
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.bin] primary=1
+pmRegisterDerived: name="a.m5" expr="sample.long.one < 0 ? sample.bin-sample.bin : sample.bin"
+derive_lex() -> type=L_NAME "sample.long.one"
+derive_lex() -> type=L_LT "<"
+derive_lex() -> type=L_INTEGER "0"
+derive_lex() -> type=L_QUEST "?"
+derive_lex() -> type=L_NAME "sample.bin"
+derive_lex() -> type=L_MINUS "-"
+derive_lex() -> type=L_NAME "sample.bin"
+derive_lex() -> type=L_COLON ":"
+derive_lex() -> type=L_NAME "sample.bin"
+derive_lex() -> type=L_EOS ""
+pmRegisterDerived: global metric[6] a.m5 = sample.long.one < 0 ? sample.bin-sample.bin : sample.bin
+Derived metric expr dump from <addr>...
+expr node <addr> type=QUEST left=<addr> right=<addr> save_last=0
+expr node <addr> type=LT left=<addr> right=<addr> save_last=0
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.long.one] primary=1
+expr node <addr> type=INTEGER left=(nil) right=(nil) save_last=0 [0] primary=1
+expr node <addr> type=COLON left=<addr> right=<addr> save_last=0
+expr node <addr> type=MINUS left=<addr> right=<addr> save_last=0
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.bin] primary=1
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.bin] primary=1
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.bin] primary=1
+pmRegisterDerived: name="a.m6" expr="sample.bin!=100 && sample.bin!=900 && sample.bin!=500 ? sample.long.ten : sample.bin"
+derive_lex() -> type=L_NAME "sample.bin"
+derive_lex() -> type=L_NEQ "!="
+derive_lex() -> type=L_INTEGER "100"
+derive_lex() -> type=L_AND "&&"
+derive_lex() -> type=L_NAME "sample.bin"
+derive_lex() -> type=L_NEQ "!="
+derive_lex() -> type=L_INTEGER "900"
+derive_lex() -> type=L_AND "&&"
+derive_lex() -> type=L_NAME "sample.bin"
+derive_lex() -> type=L_NEQ "!="
+derive_lex() -> type=L_INTEGER "500"
+derive_lex() -> type=L_QUEST "?"
+derive_lex() -> type=L_NAME "sample.long.ten"
+derive_lex() -> type=L_COLON ":"
+derive_lex() -> type=L_NAME "sample.bin"
+derive_lex() -> type=L_EOS ""
+pmRegisterDerived: global metric[7] a.m6 = sample.bin!=100 && sample.bin!=900 && sample.bin!=500 ? sample.long.ten : sample.bin
+Derived metric expr dump from <addr>...
+expr node <addr> type=QUEST left=<addr> right=<addr> save_last=0
+expr node <addr> type=AND left=<addr> right=<addr> save_last=0
+expr node <addr> type=AND left=<addr> right=<addr> save_last=0
+expr node <addr> type=NEQ left=<addr> right=<addr> save_last=0
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.bin] primary=1
+expr node <addr> type=INTEGER left=(nil) right=(nil) save_last=0 [100] primary=1
+expr node <addr> type=NEQ left=<addr> right=<addr> save_last=0
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.bin] primary=1
+expr node <addr> type=INTEGER left=(nil) right=(nil) save_last=0 [900] primary=1
+expr node <addr> type=NEQ left=<addr> right=<addr> save_last=0
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.bin] primary=1
+expr node <addr> type=INTEGER left=(nil) right=(nil) save_last=0 [500] primary=1
+expr node <addr> type=COLON left=<addr> right=<addr> save_last=0
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.long.ten] primary=1
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.bin] primary=1
+pmRegisterDerived: name="a.m7" expr="sample.bin==100 || sample.bin==900 || sample.bin==500 ? sample.bin : sample.long.ten"
+derive_lex() -> type=L_NAME "sample.bin"
+derive_lex() -> type=L_EQ "=="
+derive_lex() -> type=L_INTEGER "100"
+derive_lex() -> type=L_OR "||"
+derive_lex() -> type=L_NAME "sample.bin"
+derive_lex() -> type=L_EQ "=="
+derive_lex() -> type=L_INTEGER "900"
+derive_lex() -> type=L_OR "||"
+derive_lex() -> type=L_NAME "sample.bin"
+derive_lex() -> type=L_EQ "=="
+derive_lex() -> type=L_INTEGER "500"
+derive_lex() -> type=L_QUEST "?"
+derive_lex() -> type=L_NAME "sample.bin"
+derive_lex() -> type=L_COLON ":"
+derive_lex() -> type=L_NAME "sample.long.ten"
+derive_lex() -> type=L_EOS ""
+pmRegisterDerived: global metric[8] a.m7 = sample.bin==100 || sample.bin==900 || sample.bin==500 ? sample.bin : sample.long.ten
+Derived metric expr dump from <addr>...
+expr node <addr> type=QUEST left=<addr> right=<addr> save_last=0
+expr node <addr> type=OR left=<addr> right=<addr> save_last=0
+expr node <addr> type=OR left=<addr> right=<addr> save_last=0
+expr node <addr> type=EQ left=<addr> right=<addr> save_last=0
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.bin] primary=1
+expr node <addr> type=INTEGER left=(nil) right=(nil) save_last=0 [100] primary=1
+expr node <addr> type=EQ left=<addr> right=<addr> save_last=0
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.bin] primary=1
+expr node <addr> type=INTEGER left=(nil) right=(nil) save_last=0 [900] primary=1
+expr node <addr> type=EQ left=<addr> right=<addr> save_last=0
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.bin] primary=1
+expr node <addr> type=INTEGER left=(nil) right=(nil) save_last=0 [500] primary=1
+expr node <addr> type=COLON left=<addr> right=<addr> save_last=0
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.bin] primary=1
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.long.ten] primary=1
+pmRegisterDerived: name="a.m8" expr="delta(disk.all.read_bytes) + delta(disk.all.write_bytes) == 0 ? mkconst(0, type="double", semantics="instant") : 100 * (delta(sample.byte_ctr) + delta(sample.kbyte_ctr) - delta(sampledso.byte_ctr)) / (delta(disk.all.read_bytes) + delta(disk.all.write_bytes))"
+derive_lex() -> type=L_DELTA "delta"
+derive_lex() -> type=L_LPAREN "("
+derive_lex() -> type=L_NAME "disk.all.read_bytes"
+derive_lex() -> type=L_RPAREN ")"
+derive_lex() -> type=L_PLUS "+"
+derive_lex() -> type=L_DELTA "delta"
+derive_lex() -> type=L_LPAREN "("
+derive_lex() -> type=L_NAME "disk.all.write_bytes"
+derive_lex() -> type=L_RPAREN ")"
+derive_lex() -> type=L_EQ "=="
+derive_lex() -> type=L_INTEGER "0"
+derive_lex() -> type=L_QUEST "?"
+derive_lex() -> type=L_MKCONST "mkconst"
+derive_lex() -> type=L_LPAREN "("
+derive_lex() -> type=L_INTEGER "0"
+derive_lex() -> type=L_COMMA ","
+derive_lex() -> type=L_TYPE "type"
+derive_lex() -> type=L_ASSIGN "="
+derive_lex() -> type=L_STRING "double"
+derive_lex() -> type=L_COMMA ","
+derive_lex() -> type=L_SEMANTICS "semantics"
+derive_lex() -> type=L_ASSIGN "="
+derive_lex() -> type=L_STRING "instant"
+derive_lex() -> type=L_RPAREN ")"
+derive_lex() -> type=L_COLON ":"
+derive_lex() -> type=L_INTEGER "100"
+derive_lex() -> type=L_STAR "*"
+derive_lex() -> type=L_LPAREN "("
+derive_lex() -> type=L_DELTA "delta"
+derive_lex() -> type=L_LPAREN "("
+derive_lex() -> type=L_NAME "sample.byte_ctr"
+derive_lex() -> type=L_RPAREN ")"
+derive_lex() -> type=L_PLUS "+"
+derive_lex() -> type=L_DELTA "delta"
+derive_lex() -> type=L_LPAREN "("
+derive_lex() -> type=L_NAME "sample.kbyte_ctr"
+derive_lex() -> type=L_RPAREN ")"
+derive_lex() -> type=L_MINUS "-"
+derive_lex() -> type=L_DELTA "delta"
+derive_lex() -> type=L_LPAREN "("
+derive_lex() -> type=L_NAME "sampledso.byte_ctr"
+derive_lex() -> type=L_RPAREN ")"
+derive_lex() -> type=L_RPAREN ")"
+derive_lex() -> type=L_SLASH "/"
+derive_lex() -> type=L_LPAREN "("
+derive_lex() -> type=L_DELTA "delta"
+derive_lex() -> type=L_LPAREN "("
+derive_lex() -> type=L_NAME "disk.all.read_bytes"
+derive_lex() -> type=L_RPAREN ")"
+derive_lex() -> type=L_PLUS "+"
+derive_lex() -> type=L_DELTA "delta"
+derive_lex() -> type=L_LPAREN "("
+derive_lex() -> type=L_NAME "disk.all.write_bytes"
+derive_lex() -> type=L_RPAREN ")"
+derive_lex() -> type=L_RPAREN ")"
+derive_lex() -> type=L_EOS ""
+pmRegisterDerived: global metric[9] a.m8 = delta(disk.all.read_bytes) + delta(disk.all.write_bytes) == 0 ? mkconst(0, type="double", semantics="instant") : 100 * (delta(sample.byte_ctr) + delta(sample.kbyte_ctr) - delta(sampledso.byte_ctr)) / (delta(disk.all.read_bytes) + delta(disk.all.write_bytes))
+Derived metric expr dump from <addr>...
+expr node <addr> type=QUEST left=<addr> right=<addr> save_last=0
+expr node <addr> type=EQ left=<addr> right=<addr> save_last=0
+expr node <addr> type=PLUS left=<addr> right=<addr> save_last=0
+expr node <addr> type=DELTA left=<addr> right=(nil) save_last=0
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=1 [disk.all.read_bytes] primary=1
+expr node <addr> type=DELTA left=<addr> right=(nil) save_last=0
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=1 [disk.all.write_bytes] primary=1
+expr node <addr> type=INTEGER left=(nil) right=(nil) save_last=0 [0] primary=1
+expr node <addr> type=COLON left=<addr> right=<addr> save_last=0
+expr node <addr> type=INTEGER left=(nil) right=(nil) save_last=0 [0] primary=1
+expr node <addr> type=SLASH left=<addr> right=<addr> save_last=0
+expr node <addr> type=STAR left=<addr> right=<addr> save_last=0
+expr node <addr> type=INTEGER left=(nil) right=(nil) save_last=0 [100] primary=1
+expr node <addr> type=MINUS left=<addr> right=<addr> save_last=0
+expr node <addr> type=PLUS left=<addr> right=<addr> save_last=0
+expr node <addr> type=DELTA left=<addr> right=(nil) save_last=0
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=1 [sample.byte_ctr] primary=1
+expr node <addr> type=DELTA left=<addr> right=(nil) save_last=0
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=1 [sample.kbyte_ctr] primary=1
+expr node <addr> type=DELTA left=<addr> right=(nil) save_last=0
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=1 [sampledso.byte_ctr] primary=1
+expr node <addr> type=PLUS left=<addr> right=<addr> save_last=0
+expr node <addr> type=DELTA left=<addr> right=(nil) save_last=0
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=1 [disk.all.read_bytes] primary=1
+expr node <addr> type=DELTA left=<addr> right=(nil) save_last=0
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=1 [disk.all.write_bytes] primary=1
+pmRegisterDerived: name="a.err.m1" expr="sample.bin > 400 ? sample.longlong.ten : sample.bin"
+derive_lex() -> type=L_NAME "sample.bin"
+derive_lex() -> type=L_GT ">"
+derive_lex() -> type=L_INTEGER "400"
+derive_lex() -> type=L_QUEST "?"
+derive_lex() -> type=L_NAME "sample.longlong.ten"
+derive_lex() -> type=L_COLON ":"
+derive_lex() -> type=L_NAME "sample.bin"
+derive_lex() -> type=L_EOS ""
+pmRegisterDerived: global metric[10] a.err.m1 = sample.bin > 400 ? sample.longlong.ten : sample.bin
+Derived metric expr dump from <addr>...
+expr node <addr> type=QUEST left=<addr> right=<addr> save_last=0
+expr node <addr> type=GT left=<addr> right=<addr> save_last=0
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.bin] primary=1
+expr node <addr> type=INTEGER left=(nil) right=(nil) save_last=0 [400] primary=1
+expr node <addr> type=COLON left=<addr> right=<addr> save_last=0
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.longlong.ten] primary=1
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.bin] primary=1
+pmRegisterDerived: name="a.err.m2" expr="sample.long.one ? sample.byte_ctr : sample.kbyte_ctr"
+derive_lex() -> type=L_NAME "sample.long.one"
+derive_lex() -> type=L_QUEST "?"
+derive_lex() -> type=L_NAME "sample.byte_ctr"
+derive_lex() -> type=L_COLON ":"
+derive_lex() -> type=L_NAME "sample.kbyte_ctr"
+derive_lex() -> type=L_EOS ""
+pmRegisterDerived: global metric[11] a.err.m2 = sample.long.one ? sample.byte_ctr : sample.kbyte_ctr
+Derived metric expr dump from <addr>...
+expr node <addr> type=QUEST left=<addr> right=<addr> save_last=0
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.long.one] primary=1
+expr node <addr> type=COLON left=<addr> right=<addr> save_last=0
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.byte_ctr] primary=1
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.kbyte_ctr] primary=1
+pmRegisterDerived: name="a.err.m3" expr="sample.long.one ? sample.bin : sample.lights"
+derive_lex() -> type=L_NAME "sample.long.one"
+derive_lex() -> type=L_QUEST "?"
+derive_lex() -> type=L_NAME "sample.bin"
+derive_lex() -> type=L_COLON ":"
+derive_lex() -> type=L_NAME "sample.lights"
+derive_lex() -> type=L_EOS ""
+pmRegisterDerived: global metric[12] a.err.m3 = sample.long.one ? sample.bin : sample.lights
+Derived metric expr dump from <addr>...
+expr node <addr> type=QUEST left=<addr> right=<addr> save_last=0
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.long.one] primary=1
+expr node <addr> type=COLON left=<addr> right=<addr> save_last=0
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.bin] primary=1
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.lights] primary=1
+pmRegisterDerived: name="a.err.m4" expr="sample.long.one ? sample.bin : sample.colour"
+derive_lex() -> type=L_NAME "sample.long.one"
+derive_lex() -> type=L_QUEST "?"
+derive_lex() -> type=L_NAME "sample.bin"
+derive_lex() -> type=L_COLON ":"
+derive_lex() -> type=L_NAME "sample.colour"
+derive_lex() -> type=L_EOS ""
+pmRegisterDerived: global metric[13] a.err.m4 = sample.long.one ? sample.bin : sample.colour
+Derived metric expr dump from <addr>...
+expr node <addr> type=QUEST left=<addr> right=<addr> save_last=0
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.long.one] primary=1
+expr node <addr> type=COLON left=<addr> right=<addr> save_last=0
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.bin] primary=1
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.colour] primary=1
+pmRegisterDerived: name="a.err.m5" expr="sample.long.one ? sample.seconds : sample.ulong.ten"
+derive_lex() -> type=L_NAME "sample.long.one"
+derive_lex() -> type=L_QUEST "?"
+derive_lex() -> type=L_NAME "sample.seconds"
+derive_lex() -> type=L_COLON ":"
+derive_lex() -> type=L_NAME "sample.ulong.ten"
+derive_lex() -> type=L_EOS ""
+pmRegisterDerived: global metric[14] a.err.m5 = sample.long.one ? sample.seconds : sample.ulong.ten
+Derived metric expr dump from <addr>...
+expr node <addr> type=QUEST left=<addr> right=<addr> save_last=0
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.long.one] primary=1
+expr node <addr> type=COLON left=<addr> right=<addr> save_last=0
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.seconds] primary=1
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.ulong.ten] primary=1
+pmRegisterDerived: name="a.err.m6" expr="sample.long.one ? sample.byte_rate : sample.byte_rate_perhour"
+derive_lex() -> type=L_NAME "sample.long.one"
+derive_lex() -> type=L_QUEST "?"
+derive_lex() -> type=L_NAME "sample.byte_rate"
+derive_lex() -> type=L_COLON ":"
+derive_lex() -> type=L_NAME "sample.byte_rate_perhour"
+derive_lex() -> type=L_EOS ""
+pmRegisterDerived: global metric[15] a.err.m6 = sample.long.one ? sample.byte_rate : sample.byte_rate_perhour
+Derived metric expr dump from <addr>...
+expr node <addr> type=QUEST left=<addr> right=<addr> save_last=0
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.long.one] primary=1
+expr node <addr> type=COLON left=<addr> right=<addr> save_last=0
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.byte_rate] primary=1
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.byte_rate_perhour] primary=1
+pmRegisterDerived: name="a.err.m7" expr="sample.long.one ? sample.long.hundred : sample.step"
+derive_lex() -> type=L_NAME "sample.long.one"
+derive_lex() -> type=L_QUEST "?"
+derive_lex() -> type=L_NAME "sample.long.hundred"
+derive_lex() -> type=L_COLON ":"
+derive_lex() -> type=L_NAME "sample.step"
+derive_lex() -> type=L_EOS ""
+pmRegisterDerived: global metric[16] a.err.m7 = sample.long.one ? sample.long.hundred : sample.step
+Derived metric expr dump from <addr>...
+expr node <addr> type=QUEST left=<addr> right=<addr> save_last=0
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.long.one] primary=1
+expr node <addr> type=COLON left=<addr> right=<addr> save_last=0
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.long.hundred] primary=1
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.step] primary=1
+pmRegisterDerived: name="a.err.m8" expr="sample.colour > 200 ? sample.ulong.hundred : sample.ulong.ten"
+derive_lex() -> type=L_NAME "sample.colour"
+derive_lex() -> type=L_GT ">"
+derive_lex() -> type=L_INTEGER "200"
+derive_lex() -> type=L_QUEST "?"
+derive_lex() -> type=L_NAME "sample.ulong.hundred"
+derive_lex() -> type=L_COLON ":"
+derive_lex() -> type=L_NAME "sample.ulong.ten"
+derive_lex() -> type=L_EOS ""
+pmRegisterDerived: global metric[17] a.err.m8 = sample.colour > 200 ? sample.ulong.hundred : sample.ulong.ten
+Derived metric expr dump from <addr>...
+expr node <addr> type=QUEST left=<addr> right=<addr> save_last=0
+expr node <addr> type=GT left=<addr> right=<addr> save_last=0
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.colour] primary=1
+expr node <addr> type=INTEGER left=(nil) right=(nil) save_last=0 [200] primary=1
+expr node <addr> type=COLON left=<addr> right=<addr> save_last=0
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.ulong.hundred] primary=1
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.ulong.ten] primary=1
+pmRegisterDerived: name="a.err.m9" expr="sample.string.hullo ? 1 : 2"
+derive_lex() -> type=L_NAME "sample.string.hullo"
+derive_lex() -> type=L_QUEST "?"
+derive_lex() -> type=L_INTEGER "1"
+derive_lex() -> type=L_COLON ":"
+derive_lex() -> type=L_INTEGER "2"
+derive_lex() -> type=L_EOS ""
+pmRegisterDerived: global metric[18] a.err.m9 = sample.string.hullo ? 1 : 2
+Derived metric expr dump from <addr>...
+expr node <addr> type=QUEST left=<addr> right=<addr> save_last=0
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.string.hullo] primary=1
+expr node <addr> type=COLON left=<addr> right=<addr> save_last=0
+expr node <addr> type=INTEGER left=(nil) right=(nil) save_last=0 [1] primary=1
+expr node <addr> type=INTEGER left=(nil) right=(nil) save_last=0 [2] primary=1
+__dmopencontext(->ctx 0) called, 19 derived metrics
+__dmgetpmid: metric "a.m1" -> PMID 511.0.3
+__dmtraverse: name="a" added "a.m1"
+__dmgetpmid: metric "a.m2" -> PMID 511.0.4
+__dmtraverse: name="a" added "a.m2"
+__dmgetpmid: metric "a.m3" -> PMID 511.0.5
+__dmtraverse: name="a" added "a.m3"
+__dmgetpmid: metric "a.m4" -> PMID 511.0.6
+__dmtraverse: name="a" added "a.m4"
+__dmgetpmid: metric "a.m5" -> PMID 511.0.7
+__dmtraverse: name="a" added "a.m5"
+__dmgetpmid: metric "a.m6" -> PMID 511.0.8
+__dmtraverse: name="a" added "a.m6"
+__dmgetpmid: metric "a.m7" -> PMID 511.0.9
+__dmtraverse: name="a" added "a.m7"
+__dmgetpmid: metric "a.m8" -> PMID 511.0.10
+__dmtraverse: name="a" added "a.m8"
+__dmgetpmid: metric "a.err.m1" -> PMID 511.0.11
+Semantic error: ternary op type: left=64 right=32
+Semantic error: derived metric a.err.m1: sample.longlong.ten : sample.bin: Different types for ternary operands
+__dmbind: check_expr failed for metric[10] a.err.m1
+Derived metric expr dump from <addr>...
+expr node <addr> type=QUEST left=<addr> right=<addr> save_last=0
+    PMID: PM_ID_NULL (0.0.0 from pmDesc) numval: 0
+    Data Type: 32-bit int  InDom: 0.0 0x0
+    Semantics: ??? (0)  Units: none
+expr node <addr> type=GT left=<addr> right=<addr> save_last=0
+    PMID: PM_ID_NULL (29.0.6 from pmDesc) numval: 0
+    Data Type: 32-bit unsigned int  InDom: 29.2 0x7400002
+    Semantics: instant  Units: none
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.bin] primary=0
+    PMID: 29.0.6 (29.0.6 from pmDesc) numval: 0
+    Data Type: 32-bit int  InDom: 29.2 0x7400002
+    Semantics: instant  Units: none
+expr node <addr> type=INTEGER left=(nil) right=(nil) save_last=0 [400] primary=0
+    PMID: PM_ID_NULL (PM_ID_NULL from pmDesc) numval: 0
+    Data Type: 32-bit unsigned int  InDom: PM_INDOM_NULL 0xffffffff
+    Semantics: discrete  Units: none
+expr node <addr> type=COLON left=<addr> right=<addr> save_last=0
+    PMID: PM_ID_NULL (29.0.21 from pmDesc) numval: 0
+    Data Type: 64-bit int  InDom: 29.2 0x7400002
+    Semantics: instant  Units: none
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.longlong.ten] primary=0
+    PMID: 29.0.21 (29.0.21 from pmDesc) numval: 0
+    Data Type: 64-bit int  InDom: PM_INDOM_NULL 0xffffffff
+    Semantics: instant  Units: none
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.bin] primary=0
+    PMID: 29.0.6 (29.0.6 from pmDesc) numval: 0
+    Data Type: 32-bit int  InDom: 29.2 0x7400002
+    Semantics: instant  Units: none
+__dmtraverse: name="a", omitting invalid child a.err.m1 [511.0.11]
+__dmgetpmid: metric "a.err.m2" -> PMID 511.0.12
+Semantic error: ternary op units (space): left=byte (dim=1 scale=0) right=Kbyte (dim=1 scale=1)
+Semantic error: derived metric a.err.m2: sample.byte_ctr : sample.kbyte_ctr: Different units or scale (space) for ternary operands
+__dmbind: check_expr failed for metric[11] a.err.m2
+Derived metric expr dump from <addr>...
+expr node <addr> type=QUEST left=<addr> right=<addr> save_last=0
+    PMID: PM_ID_NULL (0.0.0 from pmDesc) numval: 0
+    Data Type: 32-bit int  InDom: 0.0 0x0
+    Semantics: ??? (0)  Units: none
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.long.one] primary=0
+    PMID: 29.0.10 (29.0.10 from pmDesc) numval: 0
+    Data Type: 32-bit int  InDom: PM_INDOM_NULL 0xffffffff
+    Semantics: instant  Units: none
+expr node <addr> type=COLON left=<addr> right=<addr> save_last=0
+    PMID: PM_ID_NULL (29.0.81 from pmDesc) numval: 0
+    Data Type: 32-bit int  InDom: PM_INDOM_NULL 0xffffffff
+    Semantics: counter  Units: byte
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.byte_ctr] primary=0
+    PMID: 29.0.81 (29.0.81 from pmDesc) numval: 0
+    Data Type: 32-bit int  InDom: PM_INDOM_NULL 0xffffffff
+    Semantics: counter  Units: byte
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.kbyte_ctr] primary=0
+    PMID: 29.0.83 (29.0.83 from pmDesc) numval: 0
+    Data Type: 32-bit int  InDom: PM_INDOM_NULL 0xffffffff
+    Semantics: counter  Units: Kbyte
+__dmtraverse: name="a", omitting invalid child a.err.m2 [511.0.12]
+__dmgetpmid: metric "a.err.m3" -> PMID 511.0.13
+Semantic error: ternary op type: left=32 right=STRING
+Semantic error: derived metric a.err.m3: sample.bin : sample.lights: Different types for ternary operands
+__dmbind: check_expr failed for metric[12] a.err.m3
+Derived metric expr dump from <addr>...
+expr node <addr> type=QUEST left=<addr> right=<addr> save_last=0
+    PMID: PM_ID_NULL (0.0.0 from pmDesc) numval: 0
+    Data Type: 32-bit int  InDom: 0.0 0x0
+    Semantics: ??? (0)  Units: none
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.long.one] primary=0
+    PMID: 29.0.10 (29.0.10 from pmDesc) numval: 0
+    Data Type: 32-bit int  InDom: PM_INDOM_NULL 0xffffffff
+    Semantics: instant  Units: none
+expr node <addr> type=COLON left=<addr> right=<addr> save_last=0
+    PMID: PM_ID_NULL (29.0.6 from pmDesc) numval: 0
+    Data Type: 32-bit int  InDom: 29.2 0x7400002
+    Semantics: instant  Units: none
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.bin] primary=0
+    PMID: 29.0.6 (29.0.6 from pmDesc) numval: 0
+    Data Type: 32-bit int  InDom: 29.2 0x7400002
+    Semantics: instant  Units: none
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.lights] primary=0
+    PMID: 29.0.46 (29.0.46 from pmDesc) numval: 0
+    Data Type: string  InDom: PM_INDOM_NULL 0xffffffff
+    Semantics: discrete  Units: none
+__dmtraverse: name="a", omitting invalid child a.err.m3 [511.0.13]
+__dmgetpmid: metric "a.err.m4" -> PMID 511.0.14
+Semantic error: ternary op indom: left=29.2 right=29.1
+Semantic error: derived metric a.err.m4: sample.bin : sample.colour: Different instance domains for ternary operands
+__dmbind: check_expr failed for metric[13] a.err.m4
+Derived metric expr dump from <addr>...
+expr node <addr> type=QUEST left=<addr> right=<addr> save_last=0
+    PMID: PM_ID_NULL (0.0.0 from pmDesc) numval: 0
+    Data Type: 32-bit int  InDom: 0.0 0x0
+    Semantics: ??? (0)  Units: none
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.long.one] primary=0
+    PMID: 29.0.10 (29.0.10 from pmDesc) numval: 0
+    Data Type: 32-bit int  InDom: PM_INDOM_NULL 0xffffffff
+    Semantics: instant  Units: none
+expr node <addr> type=COLON left=<addr> right=<addr> save_last=0
+    PMID: PM_ID_NULL (29.0.6 from pmDesc) numval: 0
+    Data Type: 32-bit int  InDom: 29.2 0x7400002
+    Semantics: instant  Units: none
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.bin] primary=0
+    PMID: 29.0.6 (29.0.6 from pmDesc) numval: 0
+    Data Type: 32-bit int  InDom: 29.2 0x7400002
+    Semantics: instant  Units: none
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.colour] primary=0
+    PMID: 29.0.5 (29.0.5 from pmDesc) numval: 0
+    Data Type: 32-bit int  InDom: 29.1 0x7400001
+    Semantics: instant  Units: none
+__dmtraverse: name="a", omitting invalid child a.err.m4 [511.0.14]
+__dmgetpmid: metric "a.err.m5" -> PMID 511.0.15
+Semantic error: ternary op semantics: left=counter right=instant
+Semantic error: derived metric a.err.m5: sample.seconds : sample.ulong.ten: Different semantics for ternary operands
+__dmbind: check_expr failed for metric[14] a.err.m5
+Derived metric expr dump from <addr>...
+expr node <addr> type=QUEST left=<addr> right=<addr> save_last=0
+    PMID: PM_ID_NULL (0.0.0 from pmDesc) numval: 0
+    Data Type: 32-bit int  InDom: 0.0 0x0
+    Semantics: ??? (0)  Units: none
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.long.one] primary=0
+    PMID: 29.0.10 (29.0.10 from pmDesc) numval: 0
+    Data Type: 32-bit int  InDom: PM_INDOM_NULL 0xffffffff
+    Semantics: instant  Units: none
+expr node <addr> type=COLON left=<addr> right=<addr> save_last=0
+    PMID: PM_ID_NULL (29.0.2 from pmDesc) numval: 0
+    Data Type: 32-bit unsigned int  InDom: PM_INDOM_NULL 0xffffffff
+    Semantics: counter  Units: sec
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.seconds] primary=0
+    PMID: 29.0.2 (29.0.2 from pmDesc) numval: 0
+    Data Type: 32-bit unsigned int  InDom: PM_INDOM_NULL 0xffffffff
+    Semantics: counter  Units: sec
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.ulong.ten] primary=0
+    PMID: 29.0.94 (29.0.94 from pmDesc) numval: 0
+    Data Type: 32-bit unsigned int  InDom: PM_INDOM_NULL 0xffffffff
+    Semantics: instant  Units: none
+__dmtraverse: name="a", omitting invalid child a.err.m5 [511.0.15]
+__dmgetpmid: metric "a.err.m6" -> PMID 511.0.16
+Semantic error: ternary op units (time): left=byte / sec right=byte / hour
+Semantic error: derived metric a.err.m6: sample.byte_rate : sample.byte_rate_perhour: Different units or scale (time) for ternary operands
+__dmbind: check_expr failed for metric[15] a.err.m6
+Derived metric expr dump from <addr>...
+expr node <addr> type=QUEST left=<addr> right=<addr> save_last=0
+    PMID: PM_ID_NULL (0.0.0 from pmDesc) numval: 0
+    Data Type: 32-bit int  InDom: 0.0 0x0
+    Semantics: ??? (0)  Units: none
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.long.one] primary=0
+    PMID: 29.0.10 (29.0.10 from pmDesc) numval: 0
+    Data Type: 32-bit int  InDom: PM_INDOM_NULL 0xffffffff
+    Semantics: instant  Units: none
+expr node <addr> type=COLON left=<addr> right=<addr> save_last=0
+    PMID: PM_ID_NULL (29.0.82 from pmDesc) numval: 0
+    Data Type: 32-bit int  InDom: PM_INDOM_NULL 0xffffffff
+    Semantics: instant  Units: byte / sec
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.byte_rate] primary=0
+    PMID: 29.0.82 (29.0.82 from pmDesc) numval: 0
+    Data Type: 32-bit int  InDom: PM_INDOM_NULL 0xffffffff
+    Semantics: instant  Units: byte / sec
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.byte_rate_perhour] primary=0
+    PMID: 29.0.85 (29.0.85 from pmDesc) numval: 0
+    Data Type: 32-bit int  InDom: PM_INDOM_NULL 0xffffffff
+    Semantics: instant  Units: byte / hour
+__dmtraverse: name="a", omitting invalid child a.err.m6 [511.0.16]
+__dmgetpmid: metric "a.err.m7" -> PMID 511.0.17
+Semantic error: ternary op units (count): left= right=count
+Semantic error: derived metric a.err.m7: sample.long.hundred : sample.step: Different units or scale (count) for ternary operands
+__dmbind: check_expr failed for metric[16] a.err.m7
+Derived metric expr dump from <addr>...
+expr node <addr> type=QUEST left=<addr> right=<addr> save_last=0
+    PMID: PM_ID_NULL (0.0.0 from pmDesc) numval: 0
+    Data Type: 32-bit int  InDom: 0.0 0x0
+    Semantics: ??? (0)  Units: none
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.long.one] primary=0
+    PMID: 29.0.10 (29.0.10 from pmDesc) numval: 0
+    Data Type: 32-bit int  InDom: PM_INDOM_NULL 0xffffffff
+    Semantics: instant  Units: none
+expr node <addr> type=COLON left=<addr> right=<addr> save_last=0
+    PMID: PM_ID_NULL (29.0.12 from pmDesc) numval: 0
+    Data Type: 32-bit int  InDom: PM_INDOM_NULL 0xffffffff
+    Semantics: instant  Units: none
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.long.hundred] primary=0
+    PMID: 29.0.12 (29.0.12 from pmDesc) numval: 0
+    Data Type: 32-bit int  InDom: PM_INDOM_NULL 0xffffffff
+    Semantics: instant  Units: none
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.step] primary=0
+    PMID: 29.0.8 (29.0.8 from pmDesc) numval: 0
+    Data Type: 32-bit int  InDom: PM_INDOM_NULL 0xffffffff
+    Semantics: instant  Units: count
+__dmtraverse: name="a", omitting invalid child a.err.m7 [511.0.17]
+__dmgetpmid: metric "a.err.m8" -> PMID 511.0.18
+Semantic error: derived metric a.err.m8: <expr> ? sample.ulong.hundred : sample.ulong.ten: Non-scalar ternary guard with scalar expressions
+__dmbind: check_expr failed for metric[17] a.err.m8
+Derived metric expr dump from <addr>...
+expr node <addr> type=QUEST left=<addr> right=<addr> save_last=0
+    PMID: PM_ID_NULL (0.0.0 from pmDesc) numval: 0
+    Data Type: 32-bit int  InDom: 0.0 0x0
+    Semantics: ??? (0)  Units: none
+expr node <addr> type=GT left=<addr> right=<addr> save_last=0
+    PMID: PM_ID_NULL (29.0.5 from pmDesc) numval: 0
+    Data Type: 32-bit unsigned int  InDom: 29.1 0x7400001
+    Semantics: instant  Units: none
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.colour] primary=0
+    PMID: 29.0.5 (29.0.5 from pmDesc) numval: 0
+    Data Type: 32-bit int  InDom: 29.1 0x7400001
+    Semantics: instant  Units: none
+expr node <addr> type=INTEGER left=(nil) right=(nil) save_last=0 [200] primary=0
+    PMID: PM_ID_NULL (PM_ID_NULL from pmDesc) numval: 0
+    Data Type: 32-bit unsigned int  InDom: PM_INDOM_NULL 0xffffffff
+    Semantics: discrete  Units: none
+expr node <addr> type=COLON left=<addr> right=<addr> save_last=0
+    PMID: PM_ID_NULL (29.0.95 from pmDesc) numval: 0
+    Data Type: 32-bit unsigned int  InDom: PM_INDOM_NULL 0xffffffff
+    Semantics: instant  Units: none
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.ulong.hundred] primary=0
+    PMID: 29.0.95 (29.0.95 from pmDesc) numval: 0
+    Data Type: 32-bit unsigned int  InDom: PM_INDOM_NULL 0xffffffff
+    Semantics: instant  Units: none
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.ulong.ten] primary=0
+    PMID: 29.0.94 (29.0.94 from pmDesc) numval: 0
+    Data Type: 32-bit unsigned int  InDom: PM_INDOM_NULL 0xffffffff
+    Semantics: instant  Units: none
+__dmtraverse: name="a", omitting invalid child a.err.m8 [511.0.18]
+__dmgetpmid: metric "a.err.m9" -> PMID 511.0.19
+Semantic error: derived metric a.err.m9: sample.string.hullo ? 1 : 2: Non-arithmetic operand for ternary guard
+__dmbind: check_expr failed for metric[18] a.err.m9
+Derived metric expr dump from <addr>...
+expr node <addr> type=QUEST left=<addr> right=<addr> save_last=0
+    PMID: PM_ID_NULL (0.0.0 from pmDesc) numval: 0
+    Data Type: 32-bit int  InDom: 0.0 0x0
+    Semantics: ??? (0)  Units: none
+expr node <addr> type=NAME left=(nil) right=(nil) save_last=0 [sample.string.hullo] primary=0
+    PMID: 29.0.31 (29.0.31 from pmDesc) numval: 0
+    Data Type: string  InDom: PM_INDOM_NULL 0xffffffff
+    Semantics: instant  Units: none
+expr node <addr> type=COLON left=<addr> right=<addr> save_last=0
+    PMID: PM_ID_NULL (PM_ID_NULL from pmDesc) numval: 0
+    Data Type: 32-bit unsigned int  InDom: PM_INDOM_NULL 0xffffffff
+    Semantics: discrete  Units: none
+expr node <addr> type=INTEGER left=(nil) right=(nil) save_last=0 [1] primary=0
+    PMID: PM_ID_NULL (PM_ID_NULL from pmDesc) numval: 0
+    Data Type: 32-bit unsigned int  InDom: PM_INDOM_NULL 0xffffffff
+    Semantics: discrete  Units: none
+expr node <addr> type=INTEGER left=(nil) right=(nil) save_last=0 [2] primary=0
+    PMID: PM_ID_NULL (PM_ID_NULL from pmDesc) numval: 0
+    Data Type: 32-bit unsigned int  InDom: PM_INDOM_NULL 0xffffffff
+    Semantics: discrete  Units: none
+__dmtraverse: name="a", omitting invalid child a.err.m9 [511.0.19]
+__dmgetpmid: metric "a.m1" -> PMID 511.0.3
+__dmgetpmid: metric "a.m2" -> PMID 511.0.4
+__dmgetpmid: metric "a.m3" -> PMID 511.0.5
+__dmgetpmid: metric "a.m4" -> PMID 511.0.6
+__dmgetpmid: metric "a.m5" -> PMID 511.0.7
+__dmgetpmid: metric "a.m6" -> PMID 511.0.8
+__dmgetpmid: metric "a.m7" -> PMID 511.0.9
+__dmgetpmid: metric "a.m8" -> PMID 511.0.10
+
+a.m1
+    Data Type: 64-bit unsigned int  InDom: PM_INDOM_NULL 0xffffffff
+    Semantics: instant  Units: none
+    value 10
+
+a.m2
+    Data Type: 64-bit unsigned int  InDom: PM_INDOM_NULL 0xffffffff
+    Semantics: instant  Units: none
+    value 100
+
+a.m3
+    Data Type: 32-bit int  InDom: 29.2 0x7400002
+    Semantics: instant  Units: none
+    inst [100 or "bin-100"] value 100
+    inst [200 or "bin-200"] value 200
+    inst [300 or "bin-300"] value 300
+    inst [400 or "bin-400"] value 400
+    inst [500 or "bin-500"] value 0
+    inst [600 or "bin-600"] value 0
+    inst [700 or "bin-700"] value 0
+    inst [800 or "bin-800"] value 0
+    inst [900 or "bin-900"] value 0
+
+a.m4
+    Data Type: 32-bit int  InDom: 29.2 0x7400002
+    Semantics: instant  Units: none
+    inst [100 or "bin-100"] value 100
+    inst [200 or "bin-200"] value 200
+    inst [300 or "bin-300"] value 300
+    inst [400 or "bin-400"] value 400
+    inst [500 or "bin-500"] value 10
+    inst [600 or "bin-600"] value 10
+    inst [700 or "bin-700"] value 10
+    inst [800 or "bin-800"] value 10
+    inst [900 or "bin-900"] value 10
+
+a.m5
+    Data Type: 32-bit int  InDom: 29.2 0x7400002
+    Semantics: instant  Units: none
+    inst [100 or "bin-100"] value 100
+    inst [200 or "bin-200"] value 200
+    inst [300 or "bin-300"] value 300
+    inst [400 or "bin-400"] value 400
+    inst [500 or "bin-500"] value 500
+    inst [600 or "bin-600"] value 600
+    inst [700 or "bin-700"] value 700
+    inst [800 or "bin-800"] value 800
+    inst [900 or "bin-900"] value 900
+
+a.m6
+    Data Type: 32-bit int  InDom: 29.2 0x7400002
+    Semantics: instant  Units: none
+    inst [100 or "bin-100"] value 100
+    inst [200 or "bin-200"] value 10
+    inst [300 or "bin-300"] value 10
+    inst [400 or "bin-400"] value 10
+    inst [500 or "bin-500"] value 500
+    inst [600 or "bin-600"] value 10
+    inst [700 or "bin-700"] value 10
+    inst [800 or "bin-800"] value 10
+    inst [900 or "bin-900"] value 900
+
+a.m7
+    Data Type: 32-bit int  InDom: 29.2 0x7400002
+    Semantics: instant  Units: none
+    inst [100 or "bin-100"] value 100
+    inst [200 or "bin-200"] value 10
+    inst [300 or "bin-300"] value 10
+    inst [400 or "bin-400"] value 10
+    inst [500 or "bin-500"] value 500
+    inst [600 or "bin-600"] value 10
+    inst [700 or "bin-700"] value 10
+    inst [800 or "bin-800"] value 10
+    inst [900 or "bin-900"] value 900
+
+a.m8
+    Data Type: double  InDom: PM_INDOM_NULL 0xffffffff
+    Semantics: instant  Units: none
+No value(s) available!
+expecting ...
+a.m1		10
+a.m2		100
+a.m3		100 200 300 400 0 0 0 0 0
+a.m4		100 200 300 400 10 10 10 10 10
+a.m5		100 200 300 400 500 600 700 800 900
+a.m6		100 10 10 10 500 10 10 10 900
+a.m7		100 10 10 10 500 10 10 10 900
+a.err.m1	<expr2> and <expr3> different types
+a.err.m2	<expr2> and <expr3> different units (space)
+a.err.m3	<expr2> and <expr3> different types
+a.err.m4	<expr2> and <expr3> different indoms
+a.err.m5	<expr2> and <expr3> different semantics
+a.err.m6	<expr2> and <expr3> different units (time)
+a.err.m7	<expr2> and <expr3> different units (count)
+a.err.m8	<expr1> with indom, <expr2> and <expr3> singular
+a.err.m9	<expr1> not arithmetic

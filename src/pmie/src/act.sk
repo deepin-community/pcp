@@ -1,0 +1,586 @@
+/*
+ * Copyright (c) 1995-2002 Silicon Graphics, Inc.  All Rights Reserved.
+ * 
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the
+ * Free Software Foundation; either version 2 of the License, or (at your
+ * option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ * or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ */
+
+/***********************************************************************
+ * skeleton: act.sk - actions
+ *
+ ***********************************************************************/
+
+/*
+ *  operator: actAnd
+ */
+void
+actAnd(Expr *x)
+{
+    Expr    *arg1 = x->arg1;
+    Expr    *arg2 = x->arg2;
+
+    EVALARG(arg1)
+    EVALARG(arg2)
+    *(Boolean *)x->ring = (*(Boolean *)arg1->ring == B_TRUE) && (*(Boolean *)arg2->ring == B_TRUE);
+}
+
+
+/*
+ *  operator: actOr
+ */
+void
+actOr(Expr *x)
+{
+    Expr    *arg1 = x->arg1;
+    Expr    *arg2 = x->arg2;
+
+    EVALARG(arg1)
+    if (*(Boolean *)arg1->ring == B_FALSE) {
+	EVALARG(arg2)
+	*(Boolean *)x->ring = *(Boolean *)arg2->ring;
+    }
+    else *(Boolean *)x->ring = B_TRUE;
+}
+
+
+/*
+ *  operator: actShell
+ */
+void
+actShell(Expr *x)
+{
+    static char	*path;
+    Expr    *arg1 = x->arg1;
+    Expr    *arg2 = x->arg2;
+#ifndef IS_MINGW
+    pid_t   pid;
+#endif
+    int	    sts;
+
+    /*
+     * one trip to get PATH for system(3)
+     */
+    if (path == NULL) {
+	char	*all_platform_paths = pmGetConfig("PCP_PLATFORM_PATHS");
+	char	*pcp_binadm_path = pmGetConfig("PCP_BINADM_DIR");
+	char	*pcp_bin_path = pmGetConfig("PCP_BIN_DIR");
+#define DEFAULT_PATH "PATH=/usr/sbin:/sbin:/usr/bin:/bin"
+	int	i, size = sizeof(DEFAULT_PATH) + 1;
+
+	size += strlen(all_platform_paths) + 1;
+	size += strlen(pcp_binadm_path) + 1;
+	size += strlen(pcp_bin_path) + 1;
+	if ((path = malloc(size)) != NULL) {
+	    if ((i = pmsprintf(path, size-1, "%s:%s:%s:%s\n", DEFAULT_PATH,
+			pcp_bin_path, pcp_binadm_path, all_platform_paths)) <= 0) {
+		free(path);
+		path = DEFAULT_PATH;	/* fallback to basic defaults */
+	    }
+	    else if (path[i-2] == ':')
+		path[i-2] = '\0';	/* PCP_PLATFORM_PATHS may be null */
+	    else
+		path[i] = '\0';
+	}
+	else {
+	    pmNoMem("actShell:path", size, PM_RECOV_ERR);
+	    path = DEFAULT_PATH;	/* set a basic default anyway */
+	}
+    }
+
+    if ((arg2 == NULL) ||
+	(x->smpls[0].stamp == 0) ||
+	(now >= *(RealTime *)arg2->ring + x->smpls[0].stamp))
+    {
+	EVALARG(arg1)
+	fflush(stdout);
+	fflush(stderr);
+#ifdef IS_MINGW
+	putenv(path);
+	putenv("IFS=\t\n");
+	sts = system((char *)arg1->ring);
+	need_wait = 1;
+	if (sts < 0) {
+	    pmNotifyErr(LOG_ERR, "spawn for shell failed\n");
+	    *(Boolean *)x->ring = B_FALSE;
+	}
+	else {
+	    *(Boolean *)x->ring = B_TRUE;
+	    x->smpls[0].stamp = now;
+	    x->valid = 0;
+	}
+#else /*POSIX*/
+	pid = fork();
+	if (pid == 0) {
+	    /* child, run the command */
+	    setsid();
+	    putenv(path);
+	    putenv("IFS=\t\n");
+	    sts = system((char *)arg1->ring);
+	    _exit(WEXITSTATUS(sts));	/* avoid atexit() handler */
+	}
+	else if (pid > 0) {
+	    /* parent, wait for child to exit to catch status */
+	    if (pmDebugOptions.appl2) {
+		fprintf(stderr, "actShell: fork: pid=%" FMT_PID "\n", pid);
+	    }
+	    sts = waitpid(pid, &x->valid, 0);
+	    if (pmDebugOptions.appl2) {
+		fprintf(stderr, "actShell: wait: pid=%" FMT_PID " status=0x%x", pid, x->valid);
+		if (WIFEXITED(x->valid))
+		    fprintf(stderr, " exit=%d", WEXITSTATUS(x->valid));
+		if (WIFSIGNALED(x->valid))
+		    fprintf(stderr, " signal=%d", WTERMSIG(x->valid));
+		fprintf(stderr, " (wait returns %d)\n", sts);
+	    }
+	    if (WIFEXITED(x->valid))
+		x->valid = WEXITSTATUS(x->valid);
+	    else
+		/* if no exit, then assume non-zero exit, hence failure! */
+		x->valid = 1;
+	    if (sts < 0 || x->valid != 0)
+		*(Boolean *)x->ring = B_FALSE;
+	    else
+		*(Boolean *)x->ring = B_TRUE;
+	    x->smpls[0].stamp = now;
+	}
+	else {
+	    pmNotifyErr(LOG_ERR, "fork for shell failed\n");
+	    *(Boolean *)x->ring = B_FALSE;
+	}
+#endif
+	perf->actions++;
+    }
+}
+
+
+/*
+ *  operator: actAlarm
+ */
+void
+actAlarm(Expr *x)
+{
+    static char *alarmv[] = {
+	NULL,		/* path to PCP_XCONFIRM_PROG inserted here */
+	    "-header", "Performance Co-Pilot Alarm",
+	    "-b", "Cancel",
+	    "-icon", "warning",
+	    "-t", NULL,
+	    "-t", NULL,
+	    NULL};
+
+    char    ctime[26];
+    Expr    *arg1 = x->arg1;
+    Expr    *arg2 = x->arg2;
+    time_t  clock;
+    int     sts;
+
+    if (alarmv[0] == NULL) {
+	/*
+	 * one trip to get path for xconfirm(1)
+	 */
+	alarmv[0] = pmGetConfig("PCP_XCONFIRM_PROG");
+	if (strcmp(alarmv[0], "") == 0) {
+	    pmNotifyErr(LOG_ERR, "PCP_XCONFIRM_PROG not found, using echo(1)\n");
+	    alarmv[0] = "/bin/echo";
+	}
+    }
+
+#ifndef IS_MINGW
+    /* if old alarm still active, don't post new one */
+    if (x->valid != 0) {
+	pid_t   pid;
+	pid = waitpid((pid_t)x->valid, &sts, WNOHANG);
+	if (pid <= 0) {
+	    if (pmDebugOptions.appl2) {
+		fprintf(stderr, "actAlarm: wait: pid=%d not done (wait returns %" FMT_PID ")\n", x->valid, pid);
+	    }
+	    return;
+	}
+	if (pmDebugOptions.appl2) {
+	    fprintf(stderr, "actAlarm: wait: pid=%d done status=0x%x", x->valid, sts);
+	    if (WIFEXITED(sts))
+		fprintf(stderr, " exit=%d", WEXITSTATUS(sts));
+	    if (WIFSIGNALED(sts))
+		fprintf(stderr, " signal=%d", WTERMSIG(sts));
+	    fprintf(stderr, " (wait returns %" FMT_PID ")\n", pid);
+	}
+	x->valid = 0;
+    }
+#endif
+
+    if ((arg2 == NULL) ||
+	(x->smpls[0].stamp == 0) ||
+	(now >= *(RealTime *)arg2->ring + x->smpls[0].stamp))
+    {
+	EVALARG(arg1)
+	clock = (time_t)(now+0.5);
+	pmCtime(&clock, ctime);
+#ifdef IS_MINGW
+	alarmv[8] = ctime;
+	alarmv[10] = (char *)arg1->ring;
+	sts = spawnvp(_P_DETACH, alarmv[0], alarmv);
+	if (sts < 0) {
+	    pmNotifyErr(LOG_ERR, "spawn for PCP_XCONFIRM_PROG failed\n");
+	    *(Boolean *)x->ring = B_FALSE;
+	}
+	else {
+	    *(Boolean *)x->ring = B_TRUE;
+	    x->smpls[0].stamp = now;
+	    x->valid = 0;
+	}
+#else
+	sts = fork();
+	if (sts == 0) {
+	    alarmv[8] = ctime;
+	    alarmv[10] = (char *)arg1->ring;
+	    setsid();
+	    if (strcmp(alarmv[0], "/bin/echo") != 0) {
+		/* only echo needs stdio, when xconfirm cannot be found */
+		fclose(stdin);
+		fclose(stdout);
+		fclose(stderr);
+	    }
+	    execvp(alarmv[0], alarmv);
+	    _exit(1);	/* avoid atexit() handler */
+	}
+	else if (sts > 0) {
+	    need_wait = 1;
+	    if (pmDebugOptions.appl2) {
+		fprintf(stderr, "actAlarm: fork: pid=%d\n", sts);
+	    }
+	    x->valid = sts;
+	    *(Boolean *)x->ring = B_TRUE;
+	    x->smpls[0].stamp = now;
+	}
+	else {
+	    pmNotifyErr(LOG_ERR, "fork for alarm failed\n");
+	    *(Boolean *)x->ring = B_FALSE;
+	}
+#endif
+	perf->actions++;
+    }
+}
+
+
+/*
+ *  operator: actSyslog
+ */
+void
+actSyslog(Expr *x)
+{
+    Expr	*arg1 = x->arg1;
+    Expr	*arg2 = x->arg2;
+    int		*pri;
+    char	*tag;
+
+    if ((arg2 == NULL) ||
+	(x->smpls[0].stamp == 0) ||
+	(now >= *(RealTime *)arg2->ring + x->smpls[0].stamp))
+    {
+	pri = (int *)arg1->arg2->ring;
+	tag = &((char *)arg1->arg2->ring)[sizeof(int)];
+	EVALARG(arg1)
+	openlog(tag, LOG_PID|LOG_CONS, LOG_DAEMON);
+	if (arg1->ring == NULL)
+	    syslog(*pri, "%s",  "");
+	else
+	    syslog(*pri, "%s", (char *)arg1->ring);
+	closelog();
+	*(Boolean *)x->ring = B_TRUE;
+	x->smpls[0].stamp = now;
+	perf->actions++;
+    }
+}
+
+
+/*
+ *  operator: actPrint
+ */
+void
+actPrint(Expr *x)
+{
+    Expr    *arg1 = x->arg1;
+    Expr    *arg2 = x->arg2;
+    time_t  clock = (time_t)now;
+    char    bfr[26];
+
+    if ((arg2 == NULL) ||
+	(x->smpls[0].stamp == 0) ||
+	(now >= *(RealTime *)arg2->ring + x->smpls[0].stamp))
+    {
+	EVALARG(arg1)
+	*(Boolean *)x->ring = B_TRUE;
+	x->smpls[0].stamp = now;
+	pmCtime(&clock, bfr);
+	bfr[24] = '\0';
+	printf("%s: %s\n", bfr, (char *)arg1->ring);
+	fflush(stdout);
+	perf->actions++;
+    }
+}
+
+
+/*
+ *  operator: actStomp
+ */
+void
+actStomp(Expr *x)
+{
+    Expr    *arg1 = x->arg1;
+    Expr    *arg2 = x->arg2;
+
+    if ((arg2 == NULL) ||
+	(x->smpls[0].stamp == 0) ||
+	(now >= *(RealTime *)arg2->ring + x->smpls[0].stamp))
+    {
+	EVALARG(arg1)
+	x->smpls[0].stamp = now;
+	if (stompSend((const char *)arg1->ring) != 0)
+	    *(Boolean *)x->ring = B_FALSE;
+	else
+	    *(Boolean *)x->ring = B_TRUE;
+	perf->actions++;
+    }
+}
+
+
+/*
+ * action argument handling ... including %h, %v and %i substitution
+ */
+void
+actArg(Expr *x)
+{
+    Expr    *sp = x->arg1;
+    char    *string = (char *)0;
+    size_t  length = 0;
+
+    for (sp = x->arg1; sp != NULL; sp = sp->arg1)
+	length = formatSatisfyingValue((char *)sp->ring, length, &string);
+
+    newStringBfr(x, length, string);
+}
+
+
+/*
+ * fake actions for archive mode
+ */
+
+/* first -f|--format support ... */
+typedef struct {
+    int		type;
+    void	*data;
+} msg_fmt;
+
+#define FMT_UNKNOWN	-1
+#define FMT_STR		0
+#define FMT_ACTION	1
+#define FMT_DATETIME	2
+#define FMT_FILE	3
+#define FMT_LINENO	4
+#define FMT_MSG		5
+#define FMT_USECDATE	6
+#define FMT_END		99
+
+static msg_fmt *parse_fmt(char *fmt)
+{
+    msg_fmt	*res = NULL;
+    msg_fmt	*rp;
+    int		npart = 0;
+    char	*p;
+    char	*q;
+
+    p = q = fmt;
+
+    while (*q) {
+	if (*q == '%') {
+	    int		type = FMT_UNKNOWN;
+	    if (q > p) {
+		/* string before % */
+		npart++;
+		if ((rp = (msg_fmt *)realloc(res, npart*sizeof(msg_fmt))) == NULL) {
+		    fprintf(stderr, "parse_fmt: realloc for part %d failed\n", npart);
+		    free(res);
+		    return NULL;
+		}
+		res = rp;
+		rp = &res[npart-1];
+		rp->type = FMT_STR;
+		rp->data = (void *)strndup(p, q-p);
+	    }
+	    /* look at next char ... */
+	    switch (q[1]) {
+		case 'a':
+			type = FMT_ACTION;
+			break;
+
+		case 'd':
+			type = FMT_DATETIME;
+			break;
+
+		case 'f':
+			type = FMT_FILE;
+			break;
+
+		case 'l':
+			type = FMT_LINENO;
+			break;
+
+		case 'm':
+			type = FMT_MSG;
+			break;
+
+		case 'u':
+			type = FMT_USECDATE;
+			break;
+
+		case '%':
+			p = ++q;
+			break;
+		case '\0':
+			p = q;
+			break;
+		default:
+			fprintf(stderr, "Warning: unrecognized field specifier '%%%c' in format\n", q[1]);
+			p = q;
+			break;
+	    }
+	    if (type != FMT_UNKNOWN) {
+		npart++;
+		if ((rp = (msg_fmt *)realloc(res, npart*sizeof(msg_fmt))) == NULL) {
+		    fprintf(stderr, "parse_fmt: realloc for part %d (field %%%c) failed\n", npart, q[1]);
+		    free(res);
+		    return NULL;
+		}
+		res = rp;
+		rp = &res[npart-1];
+		rp->type = type;
+		rp->data = NULL;
+		++q;
+		p = ++q;
+	    }
+	    else
+		++q;
+	}
+	else
+	    ++q;
+    }
+
+    if (*p != '\0') {
+	/* trailing string */
+	npart++;
+	if ((rp = (msg_fmt *)realloc(res, npart*sizeof(msg_fmt))) == NULL) {
+	    fprintf(stderr, "parse_fmt: realloc for part %d failed\n", npart);
+	    free(res);
+	    return NULL;
+	}
+	res = rp;
+	rp = &res[npart-1];
+	rp->type = FMT_STR;
+	rp->data = (void *)strndup(p, q-p);
+    }
+
+    /* end-of-format */
+    npart++;
+    if ((rp = (msg_fmt *)realloc(res, npart*sizeof(msg_fmt))) == NULL) {
+	fprintf(stderr, "parse_fmt: realloc for part END failed\n");
+	free(res);
+	return NULL;
+    }
+    res = rp;
+    rp = &res[npart-1];
+    rp->type = FMT_END;
+    rp->data = NULL;
+
+    return res;
+}
+
+void
+actFake(Expr *x)
+{
+    Expr    		*arg1 = x->arg1;
+    Expr    		*arg2 = x->arg2;
+    aux_action		*aap = (aux_action *)x->auxdata;
+    time_t  		clock = (time_t)now;
+    char    		bfr[26];
+    static msg_fmt	*fmt = NULL;
+    extern char		*format;
+
+    if ((arg2 == NULL) ||
+	(x->smpls[0].stamp == 0) ||
+	(now >= *(RealTime *)arg2->ring + x->smpls[0].stamp))
+    {
+	EVALARG(arg1)
+	*(Boolean *)x->ring = B_TRUE;
+	x->smpls[0].stamp = now;
+	pmCtime(&clock, bfr);
+	bfr[24] = '\0';
+
+	if (format != NULL && fmt == NULL) {
+	    /*
+	     * one-trip for -o|--format option
+	     */
+	    fmt = parse_fmt(format);
+	    if (fmt == NULL) {
+		/* fallback to default */
+		format = NULL;
+	    }
+	}
+
+	if (format) {
+	    int		i;
+	    /* -o|--format in play */
+	    for (i = 0; ; i++) {
+		switch (fmt[i].type) {
+		    case FMT_STR:
+			printf("%s", (char *)fmt[i].data);
+			break;
+		    case FMT_ACTION:
+			printf("%s", opStrings(x->op));
+			break;
+		    case FMT_DATETIME:
+			printf("%s", bfr);
+			break;
+		    case FMT_FILE:
+			printf("%s", aap->fname);
+			break;
+		    case FMT_LINENO:
+			printf("%d", aap->lineno);
+			break;
+		    case FMT_MSG:
+			printf("%s", (char *)arg1->ring);
+			break;
+		    case FMT_USECDATE:
+			/*
+			 * bfr[18] is where the time (in seconds) from
+			 * pmCtime() ends
+			 */
+			printf("%19.19s.", bfr);
+			printf("%06ld", (long)((now - clock) * 1000000));
+			printf("%s", &bfr[19]);
+			break;
+		    case FMT_END:
+			putchar('\n');
+			break;
+		}
+		if (fmt[i].type == FMT_END)
+		    break;
+	    }
+	}
+	else {
+	    /* default */
+	    printf("%s %s: %s\n", opStrings(x->op), bfr, (char *)arg1->ring);
+	}
+    }
+}
+
